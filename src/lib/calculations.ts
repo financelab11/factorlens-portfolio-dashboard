@@ -96,6 +96,7 @@ export function computeVolatility(navSeries: NavPoint[]): number {
 
 // Max Drawdown = maximum peak-to-trough decline
 export function computeMaxDrawdown(navSeries: NavPoint[]): number {
+  if (navSeries.length === 0) return 0
   let maxDD = 0
   let peak = navSeries[0].value
   for (const point of navSeries) {
