@@ -86,6 +86,20 @@ export default function DashboardPage() {
     }
   }, [allocations])
 
+  // Auto-generate the default reference portfolio once funds are loaded
+  useEffect(() => {
+    if (isDefault && allocations.length === 5 && !result) {
+      handleGenerate()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDefault, allocations.length])
+
+  // Clear the default flag when the user edits allocations manually
+  const handleAllocationsChange = useCallback((next: FundAllocation[]) => {
+    setAllocations(next)
+    setIsDefault(false)
+  }, [])
+
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
