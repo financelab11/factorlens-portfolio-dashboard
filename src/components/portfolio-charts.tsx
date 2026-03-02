@@ -12,8 +12,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Legend,
-  ScatterChart,
-  Scatter,
   PieChart,
   Pie,
   Cell,
