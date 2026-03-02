@@ -126,7 +126,7 @@ export default function DashboardPage() {
                   </div>
                   <h3 className="font-semibold text-lg mb-2">No Portfolio Yet</h3>
                   <p className="text-muted-foreground text-sm max-w-sm mx-auto leading-relaxed">
-                    Select funds from the panel on the left, adjust your weights, and click "Generate Portfolio" to see your results.
+                      Select funds from the panel on the left, adjust your weights, and click &ldquo;Generate Portfolio&rdquo; to see your results.
                   </p>
                 </CardContent>
               </Card>
