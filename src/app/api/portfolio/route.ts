@@ -26,15 +26,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Weights must sum to 100' }, { status: 400 })
     }
 
-    // Fetch NAV data for all selected funds
-    const fundIds = allocations.map((a) => a.fundId)
-    const { data: navRows, error } = await supabase
-      .from('nav_data')
-      .select('fund_id, date, nav_value')
-      .in('fund_id', fundIds)
-      .order('date', { ascending: true })
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      // Fetch NAV data for all selected funds (paginate to get all rows)
+      // Supabase returns max 1000 rows per request by default
+      const fundIds = allocations.map((a) => a.fundId)
+      const PAGE = 1000
+      let navRows: { fund_id: number; date: string; nav_value: number }[] = []
+      let from = 0
+      while (true) {
+        const { data, error } = await supabase
+          .from('nav_data')
+          .select('fund_id, date, nav_value')
+          .in('fund_id', fundIds)
+          .order('fund_id', { ascending: true })
+          .order('date', { ascending: true })
+          .range(from, from + PAGE - 1)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (!data || data.length === 0) break
+        navRows = navRows.concat(data)
+        if (data.length < PAGE) break
+        from += PAGE
+      }
 
     // Group by fund
     const navByFund = new Map<number, { date: string; value: number }[]>()
