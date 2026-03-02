@@ -7,7 +7,7 @@ import { MetricsGrid } from "@/components/metrics-grid"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Sparkles } from "lucide-react"
+import { Info, Sparkles } from "lucide-react"
 
 // Top-5 fund IDs ranked by highest Sharpe ratio (equi-weighted reference portfolio)
 const DEFAULT_FUND_IDS = [26, 9, 25, 12, 23]
