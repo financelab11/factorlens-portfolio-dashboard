@@ -103,7 +103,7 @@ export function PortfolioBuilder({ funds, allocations, onChange, onGenerate, loa
         {allocations.length === 0 ? (
           <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
             <p className="text-muted-foreground text-sm">No funds selected yet.</p>
-            <p className="text-xs text-muted-foreground mt-1">Click "Add Fund" to get started.</p>
+              <p className="text-xs text-muted-foreground mt-1">Click &ldquo;Add Fund&rdquo; to get started.</p>
           </div>
         ) : (
           <div className="space-y-3">
