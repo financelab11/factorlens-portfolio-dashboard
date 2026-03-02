@@ -130,7 +130,7 @@ export default function DashboardPage() {
                   <PortfolioBuilder
                     funds={funds}
                     allocations={allocations}
-                    onChange={setAllocations}
+                    onChange={handleAllocationsChange}
                     onGenerate={handleGenerate}
                     loading={loading}
                   />
