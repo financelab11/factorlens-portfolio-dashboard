@@ -247,7 +247,7 @@ export default function AcademyPage() {
         <div className="rounded-2xl bg-gradient-to-r from-indigo-950 to-indigo-900 p-10 text-center">
           <h2 className="text-2xl font-bold text-white mb-3">Ready to Build Your Portfolio?</h2>
           <p className="text-indigo-200 mb-6 max-w-md mx-auto">
-            Apply what you've learned. Select funds, set weights, and see exactly how your portfolio would have performed over 20 years.
+              Apply what you&apos;ve learned. Select funds, set weights, and see exactly how your portfolio would have performed over 20 years.
           </p>
           <Link href="/dashboard">
             <Button size="lg" className="bg-gradient-to-r from-indigo-500 to-teal-500 hover:from-indigo-600 hover:to-teal-600 text-white border-0 px-10 h-12">
