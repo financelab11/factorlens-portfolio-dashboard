@@ -54,12 +54,18 @@ export async function POST(req: NextRequest) {
       navByFund.get(row.fund_id)!.push({ date: row.date, value: Number(row.nav_value) })
     }
 
-    // Build input for portfolio computation
-    const fundNavs = allocations.map((a) => ({
-      fundId: a.fundId,
-      weight: a.weight,
-      navSeries: navByFund.get(a.fundId) ?? [],
-    }))
+      // Build input for portfolio computation
+      const fundNavs = allocations.map((a) => ({
+        fundId: a.fundId,
+        weight: a.weight,
+        navSeries: navByFund.get(a.fundId) ?? [],
+      }))
+
+      // Validate all funds have NAV data
+      const missingFunds = fundNavs.filter((f) => f.navSeries.length === 0)
+      if (missingFunds.length > 0) {
+        return NextResponse.json({ error: `No NAV data found for fund ID(s): ${missingFunds.map(f => f.fundId).join(', ')}` }, { status: 400 })
+      }
 
     const portfolioNav = computePortfolioNav(fundNavs)
     const metrics = computeAllMetrics(portfolioNav)
