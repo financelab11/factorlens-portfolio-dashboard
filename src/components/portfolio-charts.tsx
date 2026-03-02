@@ -12,8 +12,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Legend,
-  ScatterChart,
-  Scatter,
   PieChart,
   Pie,
   Cell,
@@ -48,10 +46,6 @@ function sampleData<T>(data: T[], targetPoints: number): T[] {
 
 function formatDate(dateStr: string) {
   try { return format(parseISO(dateStr), "MMM yyyy") } catch { return dateStr }
-}
-
-function formatPct(v: number) {
-  return `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`
 }
 
 // Custom tooltip

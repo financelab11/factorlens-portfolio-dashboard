@@ -7,7 +7,10 @@ import { MetricsGrid } from "@/components/metrics-grid"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Info } from "lucide-react"
+import { Info, Sparkles } from "lucide-react"
+
+// Top-5 fund IDs ranked by highest Sharpe ratio (equi-weighted reference portfolio)
+const DEFAULT_FUND_IDS = [26, 9, 25, 12, 23]
 
 interface FundAllocation {
   fund: Fund
@@ -40,11 +43,23 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [fundsLoading, setFundsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isDefault, setIsDefault] = useState(false)
 
   useEffect(() => {
     fetch("/api/funds")
       .then((r) => r.json())
-      .then((data) => { setFunds(data); setFundsLoading(false) })
+      .then((data: Fund[]) => {
+        setFunds(data)
+        setFundsLoading(false)
+        // Auto-load top-5 Sharpe funds at equal weight
+        const defaultFunds = DEFAULT_FUND_IDS
+          .map((id) => data.find((f) => f.id === id))
+          .filter(Boolean) as Fund[]
+        if (defaultFunds.length === 5) {
+          setAllocations(defaultFunds.map((f) => ({ fund: f, weight: 20 })))
+          setIsDefault(true)
+        }
+      })
       .catch(() => setFundsLoading(false))
   }, [])
 
@@ -70,6 +85,20 @@ export default function DashboardPage() {
       setLoading(false)
     }
   }, [allocations])
+
+  // Auto-generate the default reference portfolio once funds are loaded
+  useEffect(() => {
+    if (isDefault && allocations.length === 5 && !result) {
+      handleGenerate()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDefault, allocations.length])
+
+  // Clear the default flag when the user edits allocations manually
+  const handleAllocationsChange = useCallback((next: FundAllocation[]) => {
+    setAllocations(next)
+    setIsDefault(false)
+  }, [])
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -101,7 +130,7 @@ export default function DashboardPage() {
                   <PortfolioBuilder
                     funds={funds}
                     allocations={allocations}
-                    onChange={setAllocations}
+                    onChange={handleAllocationsChange}
                     onGenerate={handleGenerate}
                     loading={loading}
                   />
@@ -126,28 +155,38 @@ export default function DashboardPage() {
                   </div>
                   <h3 className="font-semibold text-lg mb-2">No Portfolio Yet</h3>
                   <p className="text-muted-foreground text-sm max-w-sm mx-auto leading-relaxed">
-                    Select funds from the panel on the left, adjust your weights, and click "Generate Portfolio" to see your results.
+                      Select funds from the panel on the left, adjust your weights, and click &ldquo;Generate Portfolio&rdquo; to see your results.
                   </p>
                 </CardContent>
               </Card>
             )}
 
             {loading && (
-              <Card>
-                <CardContent className="p-16 text-center">
-                  <div className="h-8 w-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin mx-auto mb-4" />
-                  <p className="text-muted-foreground text-sm">Computing portfolio metrics from {allocations.length} fund{allocations.length > 1 ? "s" : ""}...</p>
-                </CardContent>
-              </Card>
-            )}
+                <Card>
+                  <CardContent className="p-16 text-center">
+                    <div className="h-8 w-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground text-sm">
+                      {isDefault
+                        ? "Loading reference portfolio — top 5 funds by Sharpe…"
+                        : `Computing portfolio metrics from ${allocations.length} fund${allocations.length > 1 ? "s" : ""}...`}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
             {result && !loading && (
               <>
-                {/* Summary badge */}
-                <div className="flex flex-wrap gap-2 items-center">
-                  <Badge variant="secondary" className="text-xs">
-                    {allocations.length} fund{allocations.length > 1 ? "s" : ""}
-                  </Badge>
+                  {/* Summary badge */}
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {isDefault && (
+                      <Badge className="text-xs gap-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border-0">
+                        <Sparkles className="h-3 w-3" />
+                        Top-5 Sharpe Reference
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-xs">
+                      {allocations.length} fund{allocations.length > 1 ? "s" : ""}
+                    </Badge>
                   <Badge variant="secondary" className="text-xs">
                     {result.metrics.startDate.slice(0, 7)} → {result.metrics.endDate.slice(0, 7)}
                   </Badge>
