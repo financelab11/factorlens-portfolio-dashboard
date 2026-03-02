@@ -48,10 +48,6 @@ function formatDate(dateStr: string) {
   try { return format(parseISO(dateStr), "MMM yyyy") } catch { return dateStr }
 }
 
-function formatPct(v: number) {
-  return `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`
-}
-
 // Custom tooltip
 function CustomTooltip({ active, payload, label, formatter }: TooltipProps<number, string> & { formatter?: (v: number) => string }) {
   if (!active || !payload?.length) return null
