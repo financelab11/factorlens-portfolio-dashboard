@@ -162,13 +162,17 @@ export default function DashboardPage() {
             )}
 
             {loading && (
-              <Card>
-                <CardContent className="p-16 text-center">
-                  <div className="h-8 w-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin mx-auto mb-4" />
-                  <p className="text-muted-foreground text-sm">Computing portfolio metrics from {allocations.length} fund{allocations.length > 1 ? "s" : ""}...</p>
-                </CardContent>
-              </Card>
-            )}
+                <Card>
+                  <CardContent className="p-16 text-center">
+                    <div className="h-8 w-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground text-sm">
+                      {isDefault
+                        ? "Loading reference portfolio — top 5 funds by Sharpe…"
+                        : `Computing portfolio metrics from ${allocations.length} fund${allocations.length > 1 ? "s" : ""}...`}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
             {result && !loading && (
               <>
