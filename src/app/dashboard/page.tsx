@@ -7,7 +7,10 @@ import { MetricsGrid } from "@/components/metrics-grid"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Info } from "lucide-react"
+import { Sparkles } from "lucide-react"
+
+// Top-5 fund IDs ranked by highest Sharpe ratio (equi-weighted reference portfolio)
+const DEFAULT_FUND_IDS = [26, 9, 25, 12, 23]
 
 interface FundAllocation {
   fund: Fund
@@ -40,11 +43,23 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [fundsLoading, setFundsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isDefault, setIsDefault] = useState(false)
 
   useEffect(() => {
     fetch("/api/funds")
       .then((r) => r.json())
-      .then((data) => { setFunds(data); setFundsLoading(false) })
+      .then((data: Fund[]) => {
+        setFunds(data)
+        setFundsLoading(false)
+        // Auto-load top-5 Sharpe funds at equal weight
+        const defaultFunds = DEFAULT_FUND_IDS
+          .map((id) => data.find((f) => f.id === id))
+          .filter(Boolean) as Fund[]
+        if (defaultFunds.length === 5) {
+          setAllocations(defaultFunds.map((f) => ({ fund: f, weight: 20 })))
+          setIsDefault(true)
+        }
+      })
       .catch(() => setFundsLoading(false))
   }, [])
 
