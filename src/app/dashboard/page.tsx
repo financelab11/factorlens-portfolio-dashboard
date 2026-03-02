@@ -172,11 +172,17 @@ export default function DashboardPage() {
 
             {result && !loading && (
               <>
-                {/* Summary badge */}
-                <div className="flex flex-wrap gap-2 items-center">
-                  <Badge variant="secondary" className="text-xs">
-                    {allocations.length} fund{allocations.length > 1 ? "s" : ""}
-                  </Badge>
+                  {/* Summary badge */}
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {isDefault && (
+                      <Badge className="text-xs gap-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border-0">
+                        <Sparkles className="h-3 w-3" />
+                        Top-5 Sharpe Reference
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-xs">
+                      {allocations.length} fund{allocations.length > 1 ? "s" : ""}
+                    </Badge>
                   <Badge variant="secondary" className="text-xs">
                     {result.metrics.startDate.slice(0, 7)} → {result.metrics.endDate.slice(0, 7)}
                   </Badge>
