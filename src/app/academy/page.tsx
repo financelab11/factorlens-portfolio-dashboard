@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ArrowRight, BookOpen, TrendingUp, Shield, BarChart3, Layers, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 const sections = [
