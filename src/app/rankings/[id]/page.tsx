@@ -222,30 +222,46 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
                   <Info className="h-4 w-4 text-indigo-600" /> Fund Characteristics
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold">Investment Strategy</p>
-                  <p className="text-sm leading-relaxed">
-                    This is a <strong>{fund.category}</strong> index fund. It follows a rule-based strategy to select and weight stocks based on factor exposures rather than market capitalization alone.
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Investment Strategy</p>
+                  <p className="text-sm leading-relaxed font-medium">
+                    This is a <strong>{fund.category}</strong> index fund. {
+                      fund.category === "Momentum" ? "It selects stocks that have shown the highest price strength over the last 6-12 months, aiming to ride the trend." :
+                      fund.category === "Quality" ? "It focuses on companies with high return on equity, low debt, and consistent profit growth." :
+                      fund.category === "Low Vol" ? "It selects the least volatile stocks in the market to provide smoother returns during market turbulence." :
+                      fund.category === "Value" ? "It targets undervalued companies with low price-to-book or price-to-earnings ratios." :
+                      fund.category === "Alpha" ? "It seeks stocks that have generated the highest abnormal returns relative to their beta." :
+                      fund.category === "Multi-Factor" ? "It combines multiple factors like Momentum, Quality, and Low Volatility to provide a balanced risk-adjusted profile." :
+                      "It tracks a broad-market index to provide exposure to the overall economy."
+                    }
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Nifty 50 Comparison</p>
+                  <p className="text-sm leading-relaxed font-medium">
+                    Compared to the Nifty 50 benchmark, this fund has delivered an annualized excess return of <strong>{((fund.cagr - (benchmarkMetrics?.cagr || 0)) * 100).toFixed(1)}%</strong>. 
+                    Its volatility is <strong>{fund.volatility > (benchmarkMetrics?.volatility || 0) ? "higher" : "lower"}</strong> than the benchmark, resulting in a Sharpe ratio of <strong>{fund.sharpe_ratio.toFixed(2)}</strong> vs {benchmarkMetrics?.sharpe_ratio.toFixed(2)} for Nifty 50.
                   </p>
                 </div>
                 
                 <div className="pt-4 border-t border-indigo-100/50 dark:border-indigo-900/50 space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Volatility Profile</span>
-                    <Badge variant="secondary" className="text-[10px]">
+                    <span className="text-xs text-muted-foreground font-bold">Volatility Profile</span>
+                    <Badge variant="secondary" className="text-[10px] font-black uppercase">
                       {fund.volatility > 0.18 ? "High" : fund.volatility > 0.14 ? "Moderate" : "Low"}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Return Efficiency</span>
-                    <Badge variant="secondary" className="text-[10px]">
+                    <span className="text-xs text-muted-foreground font-bold">Return Efficiency</span>
+                    <Badge variant="secondary" className="text-[10px] font-black uppercase">
                       {fund.sharpe_ratio > 1.0 ? "Superior" : fund.sharpe_ratio > 0.8 ? "Good" : "Average"}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Recovery Strength</span>
-                    <Badge variant="secondary" className="text-[10px]">
+                    <span className="text-xs text-muted-foreground font-bold">Recovery Strength</span>
+                    <Badge variant="secondary" className="text-[10px] font-black uppercase">
                       {fund.calmar_ratio > 0.5 ? "Robust" : "Normal"}
                     </Badge>
                   </div>
