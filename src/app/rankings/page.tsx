@@ -226,15 +226,25 @@ export default function RankingsPage() {
                               {fund.category}
                             </Badge>
                           </td>
-                          <td className={cn("px-4 py-4 font-semibold tabular-nums whitespace-nowrap", fund.cagr > 0.18 ? "text-teal-600" : "text-foreground")}>
-                            {pct(fund.cagr)}
-                          </td>
-                          <td className="px-4 py-4 tabular-nums whitespace-nowrap text-muted-foreground">
-                            {pct(fund.avg_3y_rolling_return)}
-                          </td>
-                          <td className={cn("px-4 py-4 tabular-nums whitespace-nowrap", fund.sharpe_ratio > 0.9 ? "text-teal-600 font-semibold" : "text-foreground")}>
-                            {fixed(fund.sharpe_ratio)}
-                          </td>
+                            <td className={cn("px-4 py-4 tabular-nums whitespace-nowrap", fund.cagr > 0.18 ? "text-teal-600 font-semibold" : "text-foreground")}>
+                              {pct(fund.cagr)}
+                              {nifty50 && fund.id !== nifty50.id && (
+                                <div className={cn("text-[9px] font-bold", fund.cagr > nifty50.cagr ? "text-teal-600" : "text-red-400")}>
+                                  {fund.cagr > nifty50.cagr ? "+" : ""}{((fund.cagr - nifty50.cagr) * 100).toFixed(1)}% vs N50
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-4 py-4 tabular-nums whitespace-nowrap text-muted-foreground">
+                              {pct(fund.avg_3y_rolling_return)}
+                            </td>
+                            <td className={cn("px-4 py-4 tabular-nums whitespace-nowrap", fund.sharpe_ratio > 0.9 ? "text-teal-600 font-semibold" : "text-foreground")}>
+                              {fixed(fund.sharpe_ratio)}
+                              {nifty50 && fund.id !== nifty50.id && (
+                                <div className={cn("text-[9px] font-bold", fund.sharpe_ratio > nifty50.sharpe_ratio ? "text-teal-600" : "text-red-400")}>
+                                  {fund.sharpe_ratio > nifty50.sharpe_ratio ? "+" : ""}{(fund.sharpe_ratio - nifty50.sharpe_ratio).toFixed(2)} vs N50
+                                </div>
+                              )}
+                            </td>
                           <td className="px-4 py-4 tabular-nums whitespace-nowrap text-red-500">
                             {pct(fund.max_drawdown)}
                           </td>
