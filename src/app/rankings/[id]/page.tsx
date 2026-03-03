@@ -189,30 +189,29 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
               </CardContent>
             </Card>
 
-              {/* Risk Analysis */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="shadow-sm border-border/60">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                      <TrendingDown className="h-4 w-4 text-red-500" /> Drawdown Risk
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DrawdownChart data={drawdownSeries} benchmarkData={benchmarkDrawdown} name={fund.code} />
-                  </CardContent>
-                </Card>
-                <Card className="shadow-sm border-border/60">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-teal-500" /> Rolling 3Y CAGR
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <RollingReturnChart data={rollingReturns} benchmarkData={benchmarkRolling} name={fund.code} />
-                  </CardContent>
-                </Card>
-              </div>
-
+            {/* Risk Analysis */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="shadow-sm border-border/60">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4 text-red-500" /> Drawdown Risk
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <DrawdownChart data={drawdownSeries} />
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm border-border/60">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-teal-500" /> Rolling 3Y CAGR
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RollingReturnChart data={rollingReturns} />
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           <div className="space-y-6">
