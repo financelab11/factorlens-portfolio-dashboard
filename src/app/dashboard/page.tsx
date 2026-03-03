@@ -9,8 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Info, Sparkles } from "lucide-react"
 
-// Top-5 fund IDs ranked by highest Sharpe ratio (equi-weighted reference portfolio)
-const DEFAULT_FUND_IDS = [26, 9, 25, 12, 23]
+// Default model portfolio fund IDs (equi-weighted)
+const DEFAULT_FUND_IDS = [26, 9, 19, 28, 27]
 
 interface FundAllocation {
   fund: Fund
@@ -34,6 +34,8 @@ interface PortfolioResult {
   metrics: PortfolioMetrics
   drawdownSeries: { date: string; value: number }[]
   rollingReturns: { date: string; value: number }[]
+  benchmarkNav?: { date: string; value: number }[]
+  benchmarkMetrics?: PortfolioMetrics
 }
 
 export default function DashboardPage() {
