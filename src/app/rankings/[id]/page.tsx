@@ -238,13 +238,13 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Nifty 50 Comparison</p>
-                  <p className="text-sm leading-relaxed font-medium">
-                    Compared to the Nifty 50 benchmark, this fund has delivered an annualized excess return of <strong>{((fund.cagr - (benchmarkMetrics?.cagr || 0)) * 100).toFixed(1)}%</strong>. 
-                    Its volatility is <strong>{fund.volatility > (benchmarkMetrics?.volatility || 0) ? "higher" : "lower"}</strong> than the benchmark, resulting in a Sharpe ratio of <strong>{fund.sharpe_ratio.toFixed(2)}</strong> vs {benchmarkMetrics?.sharpe_ratio.toFixed(2)} for Nifty 50.
-                  </p>
-                </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Nifty 50 Comparison</p>
+                    <p className="text-sm leading-relaxed font-medium">
+                      Compared to the Nifty 50 benchmark, this fund has delivered an annualized excess return of <strong>{((fund.cagr - (benchmarkMetrics?.cagr || 0)) * 100).toFixed(1)}%</strong>. 
+                      Its volatility is <strong>{fund.volatility > (benchmarkMetrics?.volatility || 0) ? "higher" : "lower"}</strong> than the benchmark, resulting in a Sharpe ratio of <strong>{fund.sharpe_ratio.toFixed(2)}</strong> vs {benchmarkMetrics?.sharpe?.toFixed(2) || "0.00"} for Nifty 50.
+                    </p>
+                  </div>
                 
                 <div className="pt-4 border-t border-indigo-100/50 dark:border-indigo-900/50 space-y-3">
                   <div className="flex justify-between items-center">
