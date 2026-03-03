@@ -106,39 +106,44 @@ export function PortfolioBuilder({ funds, allocations, onChange, onGenerate, loa
               <p className="text-xs text-muted-foreground mt-1">Click &ldquo;Add Fund&rdquo; to get started.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {allocations.map((a) => (
-              <div key={a.fund.id} className="border rounded-xl p-4 bg-card hover:border-primary/30 transition-colors">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0 mr-3">
-                    <p className="font-medium text-sm leading-tight">{a.fund.name}</p>
-                    <Badge variant="secondary" className={cn("text-xs mt-1", CATEGORY_COLORS[a.fund.category])}>
-                      {a.fund.category}
-                    </Badge>
+            <div className="space-y-4">
+              {allocations.map((a) => (
+                <div key={a.fund.id} className="border-2 rounded-2xl p-4 bg-card hover:border-primary/40 transition-all shadow-sm">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1 min-w-0 mr-3">
+                      <p className="font-bold text-[15px] leading-tight text-foreground truncate">{a.fund.name}</p>
+                      <Badge variant="secondary" className={cn("text-[10px] mt-1.5 px-2 py-0 h-4.5 uppercase font-bold tracking-wider", CATEGORY_COLORS[a.fund.category])}>
+                        {a.fund.category}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="bg-primary/10 px-2 py-1 rounded-lg">
+                        <span className="font-black text-lg text-primary tabular-nums">{a.weight}%</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => removeFund(a.fund.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="font-bold text-lg text-primary tabular-nums">{a.weight}%</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                      onClick={() => removeFund(a.fund.id)}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
+                  <div className="px-1.5 pb-2">
+                    <Slider
+                      value={[a.weight]}
+                      onValueChange={([v]) => updateWeight(a.fund.id, v)}
+                      min={1}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
                   </div>
                 </div>
-                <Slider
-                  value={[a.weight]}
-                  onValueChange={([v]) => updateWeight(a.fund.id, v)}
-                  min={1}
-                  max={100}
-                  step={1}
-                  className="w-full"
-                />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
         )}
 
         {/* Weight indicator */}
