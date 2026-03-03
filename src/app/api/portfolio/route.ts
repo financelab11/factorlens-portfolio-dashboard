@@ -76,6 +76,8 @@ export async function POST(req: NextRequest) {
     const nifty50NavRaw = navByFund.get(1) ?? []
     let benchmarkNav: { date: string; value: number }[] = []
     let benchmarkMetrics = null
+    let benchmarkDrawdown: { date: string; value: number }[] = []
+    let benchmarkRolling: { date: string; value: number }[] = []
 
     if (nifty50NavRaw.length > 0 && portfolioNav.length > 0) {
       const startDate = portfolioNav[0].date
