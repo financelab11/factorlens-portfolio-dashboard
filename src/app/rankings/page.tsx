@@ -319,15 +319,20 @@ export default function RankingsPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right flex flex-col items-end">
-                        <div className="text-[16px] font-black text-teal-600 tabular-nums">{pct(fund.cagr)}</div>
-                        <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">CAGR</div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right flex flex-col items-end">
+                          <div className="text-[16px] font-black text-teal-600 tabular-nums">{pct(fund.cagr)}</div>
+                          {nifty50 && fund.id !== nifty50.id && (
+                            <div className={cn("text-[9px] font-bold px-1 rounded", fund.cagr > nifty50.cagr ? "text-teal-600" : "text-red-400")}>
+                              {fund.cagr > nifty50.cagr ? "+" : ""}{((fund.cagr - nifty50.cagr) * 100).toFixed(0)}% vs N50
+                            </div>
+                          )}
+                          {!nifty50 || fund.id === nifty50.id ? <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">CAGR</div> : null}
+                        </div>
+                        <div className={cn("transition-transform duration-300", expandedId === fund.id && "rotate-180")}>
+                          <ChevronDown className="h-5 w-5 text-muted-foreground/60" />
+                        </div>
                       </div>
-                      <div className={cn("transition-transform duration-300", expandedId === fund.id && "rotate-180")}>
-                        <ChevronDown className="h-5 w-5 text-muted-foreground/60" />
-                      </div>
-                    </div>
                   </div>
 
                   {expandedId === fund.id && (
