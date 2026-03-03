@@ -38,6 +38,8 @@ interface PortfolioResult {
   rollingReturns: { date: string; value: number }[]
   benchmarkNav?: { date: string; value: number }[]
   benchmarkMetrics?: PortfolioMetrics
+  benchmarkDrawdown?: { date: string; value: number }[]
+  benchmarkRolling?: { date: string; value: number }[]
 }
 
 export default function DashboardPage() {
