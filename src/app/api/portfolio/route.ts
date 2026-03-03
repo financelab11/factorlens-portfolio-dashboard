@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
         const base = filteredNifty[0].value
         benchmarkNav = filteredNifty.map(n => ({ date: n.date, value: (n.value / base) * 100 }))
         benchmarkMetrics = computeAllMetrics(benchmarkNav)
+        benchmarkDrawdown = computeDrawdownSeries(benchmarkNav)
+        benchmarkRolling = computeRolling3YCAGR(benchmarkNav)
       }
     }
 
@@ -94,6 +96,8 @@ export async function POST(req: NextRequest) {
       rollingReturns,
       benchmarkNav,
       benchmarkMetrics,
+      benchmarkDrawdown,
+      benchmarkRolling,
     })
   } catch (e) {
     console.error(e)

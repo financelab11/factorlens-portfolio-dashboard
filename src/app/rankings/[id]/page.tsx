@@ -40,61 +40,66 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
   const [benchmarkNav, setBenchmarkNav] = useState<NavPoint[]>([])
   const [metrics, setMetrics] = useState<any>(null)
   const [benchmarkMetrics, setBenchmarkMetrics] = useState<any>(null)
-  const [drawdownSeries, setDrawdownSeries] = useState<any[]>([])
-  const [rollingReturns, setRollingReturns] = useState<any[]>([])
-  const [error, setError] = useState<string | null>(null)
+    const [drawdownSeries, setDrawdownSeries] = useState<any[]>([])
+    const [benchmarkDrawdown, setBenchmarkDrawdown] = useState<any[]>([])
+    const [rollingReturns, setRollingReturns] = useState<any[]>([])
+    const [benchmarkRolling, setBenchmarkRolling] = useState<any[]>([])
+    const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [fundRes, benchmarkRes] = await Promise.all([
-          fetch(`/api/funds/${id}`),
-          fetch(`/api/funds/1`) // Nifty 50
-        ])
+    useEffect(() => {
+      async function fetchData() {
+        try {
+          const [fundRes, benchmarkRes] = await Promise.all([
+            fetch(`/api/funds/${id}`),
+            fetch(`/api/funds/1`) // Nifty 50
+          ])
 
-        const fundData = await fundRes.json()
-        const benchmarkData = await benchmarkRes.json()
+          const fundData = await fundRes.json()
+          const benchmarkData = await benchmarkRes.json()
 
-        if (fundData.error) throw new Error(fundData.error)
-        
-        setFund(fundData.fund)
-        
-        // Align NAV series to common start date
-        const fundNavRaw = fundData.nav
-        const benchNavRaw = benchmarkData.nav
-        
-        if (fundNavRaw.length > 0 && benchNavRaw.length > 0) {
-          const startDate = fundNavRaw[0].date
-          const filteredBench = benchNavRaw.filter((n: any) => n.date >= startDate)
+          if (fundData.error) throw new Error(fundData.error)
           
-          if (filteredBench.length > 0) {
-            const fundBase = fundNavRaw[0].value
-            const benchBase = filteredBench[0].value
+          setFund(fundData.fund)
+          
+          // Align NAV series to common start date
+          const fundNavRaw = fundData.nav
+          const benchNavRaw = benchmarkData.nav
+          
+          if (fundNavRaw.length > 0 && benchNavRaw.length > 0) {
+            const startDate = fundNavRaw[0].date
+            const filteredBench = benchNavRaw.filter((n: any) => n.date >= startDate)
             
-            const rebasedFund = fundNavRaw.map((n: any) => ({ date: n.date, value: (n.value / fundBase) * 100 }))
-            const rebasedBench = filteredBench.map((n: any) => ({ date: n.date, value: (n.value / benchBase) * 100 }))
-            
-            setNav(rebasedFund)
-            setBenchmarkNav(rebasedBench)
-            
-            const fundMetrics = computeAllMetrics(rebasedFund)
-            const benchMetrics = computeAllMetrics(rebasedBench)
-            
-            setMetrics(fundMetrics)
-            setBenchmarkMetrics(benchMetrics)
-            setDrawdownSeries(computeDrawdownSeries(rebasedFund))
-            setRollingReturns(computeRolling3YCAGR(rebasedFund))
+            if (filteredBench.length > 0) {
+              const fundBase = fundNavRaw[0].value
+              const benchBase = filteredBench[0].value
+              
+              const rebasedFund = fundNavRaw.map((n: any) => ({ date: n.date, value: (n.value / fundBase) * 100 }))
+              const rebasedBench = filteredBench.map((n: any) => ({ date: n.date, value: (n.value / benchBase) * 100 }))
+              
+              setNav(rebasedFund)
+              setBenchmarkNav(rebasedBench)
+              
+              const fundMetrics = computeAllMetrics(rebasedFund)
+              const benchMetrics = computeAllMetrics(rebasedBench)
+              
+              setMetrics(fundMetrics)
+              setBenchmarkMetrics(benchMetrics)
+              setDrawdownSeries(computeDrawdownSeries(rebasedFund))
+              setBenchmarkDrawdown(computeDrawdownSeries(rebasedBench))
+              setRollingReturns(computeRolling3YCAGR(rebasedFund))
+              setBenchmarkRolling(computeRolling3YCAGR(rebasedBench))
+            }
           }
+        } catch (e: any) {
+          setError(e.message)
+        } finally {
+          setLoading(false)
         }
-      } catch (e: any) {
-        setError(e.message)
-      } finally {
-        setLoading(false)
       }
-    }
 
-    fetchData()
-  }, [id])
+      fetchData()
+    }, [id])
+
 
   if (loading) {
     return (
@@ -184,29 +189,30 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
               </CardContent>
             </Card>
 
-            {/* Risk Analysis */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="shadow-sm border-border/60">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-bold flex items-center gap-2">
-                    <TrendingDown className="h-4 w-4 text-red-500" /> Drawdown Risk
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DrawdownChart data={drawdownSeries} />
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-border/60">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-bold flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-teal-500" /> Rolling 3Y CAGR
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RollingReturnChart data={rollingReturns} />
-                </CardContent>
-              </Card>
-            </div>
+              {/* Risk Analysis */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="shadow-sm border-border/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <TrendingDown className="h-4 w-4 text-red-500" /> Drawdown Risk
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DrawdownChart data={drawdownSeries} benchmarkData={benchmarkDrawdown} name={fund.code} />
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm border-border/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-teal-500" /> Rolling 3Y CAGR
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <RollingReturnChart data={rollingReturns} benchmarkData={benchmarkRolling} name={fund.code} />
+                  </CardContent>
+                </Card>
+              </div>
+
           </div>
 
           <div className="space-y-6">
