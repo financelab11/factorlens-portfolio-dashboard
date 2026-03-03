@@ -260,107 +260,113 @@ export default function RankingsPage() {
           </Card>
         </div>
 
-        {/* Mobile View (Cards) */}
-        <div className="md:hidden space-y-3">
-          {loading ? (
-             <div className="flex flex-col gap-3">
-               {[1,2,3,4,5].map(i => (
-                 <div key={i} className="h-24 w-full rounded-xl bg-muted/40 animate-pulse" />
-               ))}
-             </div>
-          ) : (
-            sorted.map((fund) => (
-              <div
-                key={fund.id}
-                className={cn(
-                  "bg-background border rounded-xl overflow-hidden transition-all",
-                  expandedId === fund.id ? "ring-1 ring-primary shadow-md border-primary/20" : "border-border/60"
-                )}
-              >
+          {/* Mobile View (Cards) */}
+          <div className="md:hidden space-y-4">
+            {loading ? (
+               <div className="flex flex-col gap-4">
+                 {[1,2,3,4,5].map(i => (
+                   <div key={i} className="h-32 w-full rounded-2xl bg-muted/40 animate-pulse" />
+                 ))}
+               </div>
+            ) : (
+              sorted.map((fund) => (
                 <div
-                  className="p-4 flex items-center justify-between cursor-pointer"
-                  onClick={() => setExpandedId(expandedId === fund.id ? null : fund.id)}
+                  key={fund.id}
+                  className={cn(
+                    "bg-background border rounded-2xl overflow-hidden transition-all duration-300",
+                    expandedId === fund.id ? "ring-2 ring-primary/20 shadow-xl border-primary/40 scale-[1.02]" : "border-border/60"
+                  )}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className={cn(
-                      "inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold flex-shrink-0",
-                      fund.final_rank === 1 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40" :
-                      fund.final_rank === 2 ? "bg-slate-100 text-slate-600 dark:bg-slate-800" :
-                      fund.final_rank === 3 ? "bg-orange-100 text-orange-600 dark:bg-orange-900/40" :
-                      "bg-muted text-muted-foreground"
-                    )}>
-                      {fund.final_rank}
-                    </span>
-                    <div className="flex flex-col">
-                      <Link
-                        href={`/rankings/${fund.id}`}
-                        className="font-semibold text-sm hover:text-primary transition-colors leading-tight"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {fund.name}
-                      </Link>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className={cn("text-[9px] h-4 py-0", CATEGORY_COLORS[fund.category])}>
-                          {fund.category}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground font-mono">{fund.code}</span>
+                  <div
+                    className="p-5 flex items-center justify-between cursor-pointer active:bg-muted/30"
+                    onClick={() => setExpandedId(expandedId === fund.id ? null : fund.id)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "inline-flex items-center justify-center w-10 h-10 rounded-xl text-xs font-black flex-shrink-0 shadow-sm",
+                        fund.final_rank === 1 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40" :
+                        fund.final_rank === 2 ? "bg-slate-100 text-slate-600 dark:bg-slate-800" :
+                        fund.final_rank === 3 ? "bg-orange-100 text-orange-600 dark:bg-orange-900/40" :
+                        "bg-muted text-muted-foreground"
+                      )}>
+                        #{fund.final_rank}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <Link
+                          href={`/rankings/${fund.id}`}
+                          className="font-bold text-[15px] hover:text-primary transition-colors leading-tight truncate pr-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {fund.name}
+                        </Link>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Badge variant="secondary" className={cn("text-[9px] h-4.5 py-0 px-1.5 uppercase tracking-wider font-bold", CATEGORY_COLORS[fund.category])}>
+                            {fund.category}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1 rounded">{fund.code}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right flex flex-col items-end">
+                        <div className="text-[16px] font-black text-teal-600 tabular-nums">{pct(fund.cagr)}</div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">CAGR</div>
+                      </div>
+                      <div className={cn("transition-transform duration-300", expandedId === fund.id && "rotate-180")}>
+                        <ChevronDown className="h-5 w-5 text-muted-foreground/60" />
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-teal-600">{pct(fund.cagr)}</div>
-                      <div className="text-[9px] text-muted-foreground uppercase font-medium">CAGR</div>
-                    </div>
-                    {expandedId === fund.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                  </div>
-                </div>
 
-                {expandedId === fund.id && (
-                  <div className="px-4 pb-4 pt-0 border-t bg-muted/5 animate-in slide-in-from-top-2 duration-200">
-                    <div className="grid grid-cols-2 gap-4 py-4">
-                      <div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">3Y Avg Rolling</div>
-                        <div className="text-sm font-medium">{pct(fund.avg_3y_rolling_return)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Sharpe Ratio</div>
-                        <div className="text-sm font-medium">{fixed(fund.sharpe_ratio)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 text-red-500">Max Drawdown</div>
-                        <div className="text-sm font-medium text-red-500">{pct(fund.max_drawdown)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Volatility</div>
-                        <div className="text-sm font-medium">{pct(fund.volatility)}</div>
-                      </div>
-                    </div>
-                    <div className="pt-2 flex items-center justify-between border-t border-dashed">
-                      <div className="flex-1 mr-4">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase">Composite Score</span>
-                          <span className="text-sm font-bold text-primary">{fund.score?.toFixed(1)}</span>
+                  {expandedId === fund.id && (
+                    <div className="px-5 pb-5 pt-0 border-t bg-muted/5 animate-in slide-in-from-top-2 duration-300">
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-5 py-5">
+                        <div className="space-y-1">
+                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">3Y Avg Rolling</div>
+                          <div className="text-sm font-bold tabular-nums">{pct(fund.avg_3y_rolling_return)}</div>
                         </div>
-                        <div className="h-1.5 w-full bg-muted rounded-full">
-                          <div
-                            className="h-full bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full"
-                            style={{ width: `${Math.min((fund.score / 50) * 100, 100)}%` }}
-                          />
+                        <div className="space-y-1">
+                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Sharpe Ratio</div>
+                          <div className="text-sm font-bold tabular-nums">{fixed(fund.sharpe_ratio)}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-[9px] text-red-500 uppercase font-bold tracking-widest opacity-70">Max Drawdown</div>
+                          <div className="text-sm font-bold text-red-500 tabular-nums">{pct(fund.max_drawdown)}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Volatility</div>
+                          <div className="text-sm font-bold tabular-nums">{pct(fund.volatility)}</div>
                         </div>
                       </div>
-                      <Link href={`/rankings/${fund.id}`} onClick={(e) => e.stopPropagation()}>
-                        <Button size="sm" variant="outline" className="h-8 text-[10px] gap-1">
-                          Details <ExternalLink className="h-3 w-3" />
-                        </Button>
-                      </Link>
+                      
+                      <div className="pt-4 flex flex-col gap-4 border-t border-dashed">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 mr-6">
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Composite Score</span>
+                              <span className="text-sm font-black text-primary tabular-nums">{fund.score?.toFixed(1)}</span>
+                            </div>
+                            <div className="h-2 w-full bg-muted rounded-full shadow-inner overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-teal-500 rounded-full"
+                                style={{ width: `${Math.min((fund.score / 50) * 100, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                          <Link href={`/rankings/${fund.id}`} onClick={(e) => e.stopPropagation()}>
+                            <Button size="sm" className="h-10 rounded-xl px-4 text-xs font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90">
+                              View Details <ExternalLink className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
 
         <p className="text-[10px] sm:text-xs text-muted-foreground mt-8 text-center leading-relaxed max-w-lg mx-auto">
           {sorted.length} of {funds.length} funds shown · Data: NSE India (Apr 2005–Feb 2026) · Backtested performance is not a guarantee of future returns.
