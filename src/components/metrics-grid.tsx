@@ -79,6 +79,14 @@ function MetricCard({
 }
 
 export function MetricsGrid({ metrics, benchmark }: Props) {
+  if (!metrics) return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {[1, 2, 3, 4, 5, 6].map(i => (
+        <Card key={i} className="border-border/60 h-24 animate-pulse bg-muted/20" />
+      ))}
+    </div>
+  )
+
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`
   const fixed = (v: number, d = 2) => v.toFixed(d)
 
