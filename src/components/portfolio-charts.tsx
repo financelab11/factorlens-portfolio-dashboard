@@ -63,13 +63,23 @@ function CustomTooltip({ active, payload, label, formatter }: TooltipProps<numbe
   )
 }
 
-export function NavChart({ data, benchmarkData }: { data: NavPoint[]; benchmarkData?: NavPoint[] }) {
+export function NavChart({
+  data,
+  benchmarkData,
+  name = "Portfolio",
+  benchmarkName = "Nifty 50",
+}: {
+  data: NavPoint[]
+  benchmarkData?: NavPoint[]
+  name?: string
+  benchmarkName?: string
+}) {
   const sampled = sampleData(data, 400)
   const sampledBenchmark = benchmarkData ? sampleData(benchmarkData, 400) : []
-  
+
   const combinedData = sampled.map((p, i) => ({
     ...p,
-    benchmark: sampledBenchmark[i]?.value
+    benchmark: sampledBenchmark[i]?.value,
   }))
 
   return (
@@ -98,11 +108,11 @@ export function NavChart({ data, benchmarkData }: { data: NavPoint[]; benchmarkD
           width={55}
         />
         <Tooltip content={<CustomTooltip formatter={(v) => `₹${v.toFixed(2)}`} />} />
-        <Legend verticalAlign="top" height={36}/>
+        <Legend verticalAlign="top" height={36} />
         <Area
           type="monotone"
           dataKey="value"
-          name="Portfolio"
+          name={name}
           stroke="#4f46e5"
           strokeWidth={2}
           fill="url(#navGrad)"
@@ -113,7 +123,7 @@ export function NavChart({ data, benchmarkData }: { data: NavPoint[]; benchmarkD
           <Line
             type="monotone"
             dataKey="benchmark"
-            name="Nifty 50"
+            name={benchmarkName}
             stroke="#94a3b8"
             strokeWidth={1.5}
             strokeDasharray="4 4"
