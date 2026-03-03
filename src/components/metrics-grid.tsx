@@ -18,12 +18,14 @@ interface Metrics {
 
 interface Props {
   metrics: Metrics
+  benchmark?: Metrics
 }
 
 function MetricCard({
   label,
   value,
   sub,
+  benchmarkValue,
   icon: Icon,
   positive,
   className,
@@ -31,6 +33,7 @@ function MetricCard({
   label: string
   value: string
   sub?: string
+  benchmarkValue?: string
   icon: React.ElementType
   positive?: boolean
   className?: string
@@ -62,14 +65,21 @@ function MetricCard({
         )}>
           {value}
         </p>
-        {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+        <div className="flex items-center justify-between mt-1">
+          {sub && <p className="text-[10px] text-muted-foreground truncate">{sub}</p>}
+          {benchmarkValue && (
+            <p className="text-[10px] text-muted-foreground font-medium ml-auto">
+              vs {benchmarkValue}
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
 }
 
-export function MetricsGrid({ metrics }: Props) {
-  const pct = (v: number) => `${(v * 100).toFixed(2)}%`
+export function MetricsGrid({ metrics, benchmark }: Props) {
+  const pct = (v: number) => `${(v * 100).toFixed(1)}%`
   const fixed = (v: number, d = 2) => v.toFixed(d)
 
   return (
@@ -77,13 +87,15 @@ export function MetricsGrid({ metrics }: Props) {
       <MetricCard
         label="CAGR"
         value={pct(metrics.cagr)}
-        sub="Since inception"
+        benchmarkValue={benchmark ? pct(benchmark.cagr) : undefined}
+        sub="Annualised Return"
         icon={TrendingUp}
         positive={metrics.cagr > 0}
       />
       <MetricCard
         label="Volatility"
         value={pct(metrics.volatility)}
+        benchmarkValue={benchmark ? pct(benchmark.volatility) : undefined}
         sub="Annual std dev"
         icon={Activity}
         positive={metrics.volatility < 0.2}
@@ -91,28 +103,32 @@ export function MetricsGrid({ metrics }: Props) {
       <MetricCard
         label="Sharpe Ratio"
         value={fixed(metrics.sharpe)}
-        sub="Return per unit risk"
+        benchmarkValue={benchmark ? fixed(benchmark.sharpe) : undefined}
+        sub="Return per risk"
         icon={BarChart3}
         positive={metrics.sharpe > 0.8}
       />
       <MetricCard
         label="Max Drawdown"
         value={pct(metrics.maxDrawdown)}
-        sub="Worst peak-to-trough"
+        benchmarkValue={benchmark ? pct(benchmark.maxDrawdown) : undefined}
+        sub="Worst Decline"
         icon={TrendingDown}
         positive={false}
       />
       <MetricCard
         label="Calmar Ratio"
         value={fixed(metrics.calmar)}
-        sub="CAGR / Max Drawdown"
+        benchmarkValue={benchmark ? fixed(benchmark.calmar) : undefined}
+        sub="Return / MDD"
         icon={Shield}
         positive={metrics.calmar > 0.3}
       />
       <MetricCard
         label="Total Return"
-        value={`${metrics.totalReturn.toFixed(1)}%`}
-        sub={`${metrics.startDate.slice(0, 4)}–${metrics.endDate.slice(0, 4)}`}
+        value={`${metrics.totalReturn.toFixed(0)}%`}
+        benchmarkValue={benchmark ? `${benchmark.totalReturn.toFixed(0)}%` : undefined}
+        sub="Since inception"
         icon={Zap}
         positive={metrics.totalReturn > 0}
       />
