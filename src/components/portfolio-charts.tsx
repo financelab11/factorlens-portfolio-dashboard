@@ -63,11 +63,18 @@ function CustomTooltip({ active, payload, label, formatter }: TooltipProps<numbe
   )
 }
 
-export function NavChart({ data }: { data: NavPoint[] }) {
+export function NavChart({ data, benchmarkData }: { data: NavPoint[]; benchmarkData?: NavPoint[] }) {
   const sampled = sampleData(data, 400)
+  const sampledBenchmark = benchmarkData ? sampleData(benchmarkData, 400) : []
+  
+  const combinedData = sampled.map((p, i) => ({
+    ...p,
+    benchmark: sampledBenchmark[i]?.value
+  }))
+
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <AreaChart data={sampled} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={combinedData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3} />
@@ -91,16 +98,28 @@ export function NavChart({ data }: { data: NavPoint[] }) {
           width={55}
         />
         <Tooltip content={<CustomTooltip formatter={(v) => `₹${v.toFixed(2)}`} />} />
+        <Legend verticalAlign="top" height={36}/>
         <Area
           type="monotone"
           dataKey="value"
-          name="Portfolio NAV"
+          name="Portfolio"
           stroke="#4f46e5"
           strokeWidth={2}
           fill="url(#navGrad)"
           dot={false}
           activeDot={{ r: 4 }}
         />
+        {benchmarkData && (
+          <Line
+            type="monotone"
+            dataKey="benchmark"
+            name="Nifty 50"
+            stroke="#94a3b8"
+            strokeWidth={1.5}
+            strokeDasharray="4 4"
+            dot={false}
+          />
+        )}
       </AreaChart>
     </ResponsiveContainer>
   )
