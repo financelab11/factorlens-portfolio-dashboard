@@ -64,6 +64,8 @@ export default function RankingsPage() {
       .then((d) => { setFunds(d); setLoading(false) })
   }, [])
 
+  const nifty50 = useMemo(() => funds.find(f => f.code === 'Nifty50' || f.id === 1), [funds])
+
   const categories = useMemo(() => ["All", ...Array.from(new Set(funds.map((f) => f.category)))], [funds])
 
   const sorted = useMemo(() => {
