@@ -63,6 +63,19 @@ function CustomTooltip({ active, payload, label, formatter }: TooltipProps<numbe
   )
 }
 
+// Merge two data series by date
+function mergeSeries(data: any[], benchmarkData?: any[]): any[] {
+  if (!benchmarkData || benchmarkData.length === 0) return data
+  
+  const bMap = new Map<string, number>()
+  benchmarkData.forEach(p => bMap.set(p.date, p.value))
+  
+  return data.map(p => ({
+    ...p,
+    benchmark: bMap.get(p.date)
+  }))
+}
+
 export function NavChart({
   data,
   benchmarkData,
@@ -74,17 +87,12 @@ export function NavChart({
   name?: string
   benchmarkName?: string
 }) {
-  const sampled = sampleData(data, 400)
-  const sampledBenchmark = benchmarkData ? sampleData(benchmarkData, 400) : []
-
-  const combinedData = sampled.map((p, i) => ({
-    ...p,
-    benchmark: sampledBenchmark[i]?.value,
-  }))
+  const merged = mergeSeries(data, benchmarkData)
+  const sampled = sampleData(merged, 400)
 
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <AreaChart data={combinedData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={sampled} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3} />
@@ -128,6 +136,7 @@ export function NavChart({
             strokeWidth={1.5}
             strokeDasharray="4 4"
             dot={false}
+            connectNulls
           />
         )}
       </AreaChart>
@@ -136,17 +145,12 @@ export function NavChart({
 }
 
 export function DrawdownChart({ data, benchmarkData, name = "Portfolio", benchmarkName = "Nifty 50" }: { data: DrawdownPoint[], benchmarkData?: DrawdownPoint[], name?: string, benchmarkName?: string }) {
-  const sampled = sampleData(data, 400)
-  const sampledBenchmark = benchmarkData ? sampleData(benchmarkData, 400) : []
-  
-  const combinedData = sampled.map((p, i) => ({
-    ...p,
-    benchmark: sampledBenchmark[i]?.value,
-  }))
+  const merged = mergeSeries(data, benchmarkData)
+  const sampled = sampleData(merged, 400)
 
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <AreaChart data={combinedData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={sampled} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
@@ -190,6 +194,7 @@ export function DrawdownChart({ data, benchmarkData, name = "Portfolio", benchma
             strokeWidth={1.5}
             strokeDasharray="4 4"
             dot={false}
+            connectNulls
           />
         )}
       </AreaChart>
@@ -198,17 +203,12 @@ export function DrawdownChart({ data, benchmarkData, name = "Portfolio", benchma
 }
 
 export function RollingReturnChart({ data, benchmarkData, name = "Portfolio", benchmarkName = "Nifty 50" }: { data: RollingReturn[], benchmarkData?: RollingReturn[], name?: string, benchmarkName?: string }) {
-  const sampled = sampleData(data, 400)
-  const sampledBenchmark = benchmarkData ? sampleData(benchmarkData, 400) : []
-  
-  const combinedData = sampled.map((p, i) => ({
-    ...p,
-    benchmark: sampledBenchmark[i]?.value,
-  }))
+  const merged = mergeSeries(data, benchmarkData)
+  const sampled = sampleData(merged, 400)
 
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={combinedData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+      <LineChart data={sampled} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
         <XAxis
           dataKey="date"
@@ -246,6 +246,7 @@ export function RollingReturnChart({ data, benchmarkData, name = "Portfolio", be
             strokeWidth={1.5}
             strokeDasharray="4 4"
             dot={false}
+            connectNulls
           />
         )}
       </LineChart>
