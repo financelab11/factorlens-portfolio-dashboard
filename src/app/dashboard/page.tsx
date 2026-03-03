@@ -275,7 +275,7 @@ export default function DashboardPage() {
                           <CardDescription className="text-xs">% decline from previous peak</CardDescription>
                         </CardHeader>
                         <CardContent className="px-1 sm:px-6">
-                          <DrawdownChart data={result.drawdownSeries} />
+                          <DrawdownChart data={result.drawdownSeries} benchmarkData={result.benchmarkDrawdown} />
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -288,7 +288,7 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent className="px-1 sm:px-6">
                           {result.rollingReturns.length > 0 ? (
-                            <RollingReturnChart data={result.rollingReturns} />
+                            <RollingReturnChart data={result.rollingReturns} benchmarkData={result.benchmarkRolling} />
                           ) : (
                             <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">
                               Insufficient data for rolling analysis.
