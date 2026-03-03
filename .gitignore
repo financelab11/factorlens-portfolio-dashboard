@@ -34,8 +34,8 @@ yarn-error.log*
 .vercel
 
 # environment variables
-# .env* # Removed by Orchids to allow .env files
-# .env.local # Removed by Orchids to allow .env files
+.env*
+.env.local
 
 # typescript
 *.tsbuildinfo
