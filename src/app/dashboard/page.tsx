@@ -107,49 +107,52 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header with Mobile Filter Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Portfolio Builder</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Backtest up to 20 years of performance data instantly.
-            </p>
+          {/* Header with Mobile Filter Toggle */}
+          <div className="flex flex-col mb-8 gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Portfolio Builder</h1>
+                <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+                  Backtest up to 20 years of performance data.
+                </p>
+              </div>
+            </div>
+            
+            <div className="lg:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button size="lg" className="w-full gap-2 bg-gradient-to-r from-indigo-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white border-0 shadow-lg font-bold">
+                    <SlidersHorizontal className="h-5 w-5" />
+                    Configure Your Portfolio
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[92vh] overflow-y-auto rounded-t-[2rem]">
+                  <SheetHeader className="mb-4 text-left">
+                    <SheetTitle className="text-xl">Customize Strategy</SheetTitle>
+                    <SheetDescription className="text-xs">
+                      Select funds and adjust weights (total must be 100%).
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="py-2">
+                    {fundsLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="h-6 w-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                      </div>
+                    ) : (
+                      <PortfolioBuilder
+                        funds={funds}
+                        allocations={allocations}
+                        onChange={handleAllocationsChange}
+                        onGenerate={handleGenerate}
+                        loading={loading}
+                      />
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
-          
-          <div className="lg:hidden">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="w-full gap-2 border-primary/20 bg-background">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Configure Portfolio
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
-                <SheetHeader className="mb-4">
-                  <SheetTitle>Portfolio Builder</SheetTitle>
-                  <SheetDescription>
-                    Select funds and weights that sum to 100%.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="py-4">
-                  {fundsLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="h-6 w-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-                    </div>
-                  ) : (
-                    <PortfolioBuilder
-                      funds={funds}
-                      allocations={allocations}
-                      onChange={handleAllocationsChange}
-                      onGenerate={handleGenerate}
-                      loading={loading}
-                    />
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
+
 
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Left panel: Builder (Desktop only) */}
