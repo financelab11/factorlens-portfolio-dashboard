@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Download, Search } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -56,6 +56,7 @@ export default function RankingsPage() {
   const [catFilter, setCatFilter] = useState("All")
   const [sortKey, setSortKey] = useState<SortKey>("final_rank")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
+  const [expandedId, setExpandedId] = useState<number | null>(null)
 
   useEffect(() => {
     fetch("/api/funds")
@@ -92,20 +93,6 @@ export default function RankingsPage() {
     }
   }
 
-  const exportCsv = () => {
-    const headers = ["Rank", "Name", "Category", "CAGR", "Avg 3Y CAGR", "Sharpe", "Max Drawdown", "Volatility", "Calmar", "Score"]
-    const rows = sorted.map((f) => [
-      f.final_rank, f.name, f.category,
-      pct(f.cagr), pct(f.avg_3y_rolling_return), fixed(f.sharpe_ratio),
-      pct(f.max_drawdown), pct(f.volatility), fixed(f.calmar_ratio), f.score,
-    ])
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n")
-    const blob = new Blob([csv], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url; a.download = "factorlens-rankings.csv"; a.click()
-  }
-
   function SortIcon({ col }: { col: SortKey }) {
     if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
     return sortDir === "asc"
@@ -119,17 +106,13 @@ export default function RankingsPage() {
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Fund Rankings</h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
               All 28 NSE factor & broad-market funds ranked by composite score.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv} className="gap-2">
-              <Download className="h-3.5 w-3.5" />
-              Export CSV
-            </Button>
-            <Link href="/dashboard">
-              <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white border-0">
+            <Link href="/dashboard" className="w-full sm:w-auto">
+              <Button size="sm" className="w-full bg-gradient-to-r from-indigo-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white border-0 shadow-md">
                 Build Portfolio
               </Button>
             </Link>
@@ -137,10 +120,13 @@ export default function RankingsPage() {
         </div>
 
         {/* Score explanation */}
-        <Card className="mb-6 bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800">
-          <CardContent className="p-4">
-            <p className="text-sm text-indigo-800 dark:text-indigo-200">
-              <strong>Composite Score</strong> weights multiple metrics: CAGR (since inception), average 3-year rolling return, % outperformance vs Nifty 50, median excess returns, Sharpe ratio, and max drawdown protection.
+        <Card className="mb-6 bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 shadow-sm overflow-hidden">
+          <CardContent className="p-4 flex gap-4 items-start">
+            <div className="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+              <span className="text-indigo-600 dark:text-indigo-400 font-bold text-lg">!</span>
+            </div>
+            <p className="text-xs sm:text-sm text-indigo-800 dark:text-indigo-200 leading-relaxed">
+              <strong>Composite Score</strong> weights multiple metrics: CAGR, 3-year rolling returns, Nifty 50 outperformance, excess returns, Sharpe ratio, and drawdown protection.
               Rank 1 is the highest-scoring fund.
             </p>
           </CardContent>
@@ -154,19 +140,19 @@ export default function RankingsPage() {
               placeholder="Search funds..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-background border-border/60"
             />
           </div>
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar sm:pb-0 sm:flex-wrap">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setCatFilter(cat)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  "px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-colors whitespace-nowrap border",
                   catFilter === cat
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-muted-foreground hover:bg-accent hover:text-foreground border-border/60"
                 )}
               >
                 {cat}
@@ -175,102 +161,209 @@ export default function RankingsPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex items-center justify-center py-24">
-                <div className="h-8 w-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      {[
-                        { key: "final_rank" as SortKey, label: "Rank" },
-                        { key: "name" as SortKey, label: "Fund Name" },
-                        { key: "category" as SortKey, label: "Category" },
-                        { key: "cagr" as SortKey, label: "CAGR" },
-                        { key: "avg_3y_rolling_return" as SortKey, label: "Avg 3Y" },
-                        { key: "sharpe_ratio" as SortKey, label: "Sharpe" },
-                        { key: "max_drawdown" as SortKey, label: "Max DD" },
-                        { key: "volatility" as SortKey, label: "Volatility" },
-                        { key: "score" as SortKey, label: "Score" },
-                      ].map((col) => (
-                        <th
-                          key={col.key}
-                          className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide cursor-pointer hover:text-foreground select-none whitespace-nowrap"
-                          onClick={() => handleSort(col.key)}
-                        >
-                          <span className="flex items-center gap-1">
-                            {col.label}
-                            <SortIcon col={col.key} />
-                          </span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sorted.map((fund, i) => (
-                      <tr key={fund.id} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors", i % 2 === 0 ? "" : "bg-muted/10")}>
-                        <td className="px-4 py-3 font-bold text-center">
-                          <span className={cn(
-                            "inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold",
-                            fund.final_rank === 1 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" :
-                            fund.final_rank === 2 ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" :
-                            fund.final_rank === 3 ? "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300" :
-                            "bg-muted text-muted-foreground"
-                          )}>
-                            {fund.final_rank}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 font-medium max-w-xs">
-                          <div className="truncate">{fund.name}</div>
-                          <div className="text-xs text-muted-foreground font-mono">{fund.code}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant="secondary" className={cn("text-xs whitespace-nowrap", CATEGORY_COLORS[fund.category])}>
-                            {fund.category}
-                          </Badge>
-                        </td>
-                        <td className={cn("px-4 py-3 font-semibold tabular-nums whitespace-nowrap", fund.cagr > 0.18 ? "text-teal-600" : "text-foreground")}>
-                          {pct(fund.cagr)}
-                        </td>
-                        <td className="px-4 py-3 tabular-nums whitespace-nowrap text-muted-foreground">
-                          {pct(fund.avg_3y_rolling_return)}
-                        </td>
-                        <td className={cn("px-4 py-3 tabular-nums whitespace-nowrap", fund.sharpe_ratio > 0.9 ? "text-teal-600 font-semibold" : "text-foreground")}>
-                          {fixed(fund.sharpe_ratio)}
-                        </td>
-                        <td className="px-4 py-3 tabular-nums whitespace-nowrap text-red-500">
-                          {pct(fund.max_drawdown)}
-                        </td>
-                        <td className="px-4 py-3 tabular-nums whitespace-nowrap text-muted-foreground">
-                          {pct(fund.volatility)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-muted rounded-full min-w-[48px]">
-                              <div
-                                className="h-full bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full"
-                                style={{ width: `${Math.min((fund.score / 50) * 100, 100)}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-semibold text-foreground tabular-nums">{fund.score?.toFixed(1)}</span>
-                          </div>
-                        </td>
+        {/* Desktop View (Table) */}
+        <div className="hidden md:block">
+          <Card className="shadow-sm">
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-24">
+                  <div className="h-8 w-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/30">
+                        {[
+                          { key: "final_rank" as SortKey, label: "Rank" },
+                          { key: "name" as SortKey, label: "Fund Name" },
+                          { key: "category" as SortKey, label: "Category" },
+                          { key: "cagr" as SortKey, label: "CAGR" },
+                          { key: "avg_3y_rolling_return" as SortKey, label: "Avg 3Y" },
+                          { key: "sharpe_ratio" as SortKey, label: "Sharpe" },
+                          { key: "max_drawdown" as SortKey, label: "Max DD" },
+                          { key: "volatility" as SortKey, label: "Volatility" },
+                          { key: "score" as SortKey, label: "Score" },
+                        ].map((col) => (
+                          <th
+                            key={col.key}
+                            className="px-4 py-3 text-left font-medium text-muted-foreground text-[10px] uppercase tracking-wider cursor-pointer hover:text-foreground select-none whitespace-nowrap"
+                            onClick={() => handleSort(col.key)}
+                          >
+                            <span className="flex items-center gap-1">
+                              {col.label}
+                              <SortIcon col={col.key} />
+                            </span>
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </thead>
+                    <tbody>
+                      {sorted.map((fund, i) => (
+                        <tr key={fund.id} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors group", i % 2 === 0 ? "bg-background" : "bg-muted/5")}>
+                          <td className="px-4 py-4 font-bold text-center">
+                            <span className={cn(
+                              "inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold",
+                              fund.final_rank === 1 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800" :
+                              fund.final_rank === 2 ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700" :
+                              fund.final_rank === 3 ? "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300 ring-1 ring-orange-200 dark:ring-orange-800" :
+                              "bg-muted text-muted-foreground"
+                            )}>
+                              {fund.final_rank}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 font-medium max-w-xs">
+                            <Link href={`/rankings/${fund.id}`} className="hover:text-primary transition-colors flex items-center gap-1.5">
+                              <span className="truncate">{fund.name}</span>
+                              <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </Link>
+                            <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{fund.code}</div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <Badge variant="secondary" className={cn("text-[10px] whitespace-nowrap", CATEGORY_COLORS[fund.category])}>
+                              {fund.category}
+                            </Badge>
+                          </td>
+                          <td className={cn("px-4 py-4 font-semibold tabular-nums whitespace-nowrap", fund.cagr > 0.18 ? "text-teal-600" : "text-foreground")}>
+                            {pct(fund.cagr)}
+                          </td>
+                          <td className="px-4 py-4 tabular-nums whitespace-nowrap text-muted-foreground">
+                            {pct(fund.avg_3y_rolling_return)}
+                          </td>
+                          <td className={cn("px-4 py-4 tabular-nums whitespace-nowrap", fund.sharpe_ratio > 0.9 ? "text-teal-600 font-semibold" : "text-foreground")}>
+                            {fixed(fund.sharpe_ratio)}
+                          </td>
+                          <td className="px-4 py-4 tabular-nums whitespace-nowrap text-red-500">
+                            {pct(fund.max_drawdown)}
+                          </td>
+                          <td className="px-4 py-4 tabular-nums whitespace-nowrap text-muted-foreground">
+                            {pct(fund.volatility)}
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-muted rounded-full min-w-[48px]">
+                                <div
+                                  className="h-full bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full shadow-sm"
+                                  style={{ width: `${Math.min((fund.score / 50) * 100, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-semibold text-foreground tabular-nums">{fund.score?.toFixed(1)}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        <p className="text-xs text-muted-foreground mt-4 text-center">
-          {sorted.length} of {funds.length} funds shown · Data: NSE India, Apr 2005–Feb 2026 · For educational purposes only
+        {/* Mobile View (Cards) */}
+        <div className="md:hidden space-y-3">
+          {loading ? (
+             <div className="flex flex-col gap-3">
+               {[1,2,3,4,5].map(i => (
+                 <div key={i} className="h-24 w-full rounded-xl bg-muted/40 animate-pulse" />
+               ))}
+             </div>
+          ) : (
+            sorted.map((fund) => (
+              <div
+                key={fund.id}
+                className={cn(
+                  "bg-background border rounded-xl overflow-hidden transition-all",
+                  expandedId === fund.id ? "ring-1 ring-primary shadow-md border-primary/20" : "border-border/60"
+                )}
+              >
+                <div
+                  className="p-4 flex items-center justify-between cursor-pointer"
+                  onClick={() => setExpandedId(expandedId === fund.id ? null : fund.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={cn(
+                      "inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold flex-shrink-0",
+                      fund.final_rank === 1 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40" :
+                      fund.final_rank === 2 ? "bg-slate-100 text-slate-600 dark:bg-slate-800" :
+                      fund.final_rank === 3 ? "bg-orange-100 text-orange-600 dark:bg-orange-900/40" :
+                      "bg-muted text-muted-foreground"
+                    )}>
+                      {fund.final_rank}
+                    </span>
+                    <div className="flex flex-col">
+                      <Link
+                        href={`/rankings/${fund.id}`}
+                        className="font-semibold text-sm hover:text-primary transition-colors leading-tight"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {fund.name}
+                      </Link>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary" className={cn("text-[9px] h-4 py-0", CATEGORY_COLORS[fund.category])}>
+                          {fund.category}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground font-mono">{fund.code}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-teal-600">{pct(fund.cagr)}</div>
+                      <div className="text-[9px] text-muted-foreground uppercase font-medium">CAGR</div>
+                    </div>
+                    {expandedId === fund.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                  </div>
+                </div>
+
+                {expandedId === fund.id && (
+                  <div className="px-4 pb-4 pt-0 border-t bg-muted/5 animate-in slide-in-from-top-2 duration-200">
+                    <div className="grid grid-cols-2 gap-4 py-4">
+                      <div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">3Y Avg Rolling</div>
+                        <div className="text-sm font-medium">{pct(fund.avg_3y_rolling_return)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Sharpe Ratio</div>
+                        <div className="text-sm font-medium">{fixed(fund.sharpe_ratio)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 text-red-500">Max Drawdown</div>
+                        <div className="text-sm font-medium text-red-500">{pct(fund.max_drawdown)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Volatility</div>
+                        <div className="text-sm font-medium">{pct(fund.volatility)}</div>
+                      </div>
+                    </div>
+                    <div className="pt-2 flex items-center justify-between border-t border-dashed">
+                      <div className="flex-1 mr-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase">Composite Score</span>
+                          <span className="text-sm font-bold text-primary">{fund.score?.toFixed(1)}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-muted rounded-full">
+                          <div
+                            className="h-full bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full"
+                            style={{ width: `${Math.min((fund.score / 50) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <Link href={`/rankings/${fund.id}`} onClick={(e) => e.stopPropagation()}>
+                        <Button size="sm" variant="outline" className="h-8 text-[10px] gap-1">
+                          Details <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        <p className="text-[10px] sm:text-xs text-muted-foreground mt-8 text-center leading-relaxed max-w-lg mx-auto">
+          {sorted.length} of {funds.length} funds shown · Data: NSE India (Apr 2005–Feb 2026) · Backtested performance is not a guarantee of future returns.
         </p>
       </div>
     </div>
