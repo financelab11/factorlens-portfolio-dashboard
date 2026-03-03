@@ -332,24 +332,31 @@ export default function RankingsPage() {
 
                   {expandedId === fund.id && (
                     <div className="px-5 pb-5 pt-0 border-t bg-muted/5 animate-in slide-in-from-top-2 duration-300">
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-5 py-5">
-                        <div className="space-y-1">
-                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">3Y Avg Rolling</div>
-                          <div className="text-sm font-bold tabular-nums">{pct(fund.avg_3y_rolling_return)}</div>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-5 py-5">
+                          <div className="space-y-1">
+                            <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">3Y Avg Rolling</div>
+                            <div className="text-sm font-bold tabular-nums">{pct(fund.avg_3y_rolling_return)}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Sharpe Ratio</div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-bold tabular-nums">{fixed(fund.sharpe_ratio)}</div>
+                              {nifty50 && fund.id !== nifty50.id && (
+                                <span className={cn("text-[10px] font-bold px-1 rounded", fund.sharpe_ratio > nifty50.sharpe_ratio ? "bg-teal-50 text-teal-600" : "bg-red-50 text-red-400")}>
+                                  {fund.sharpe_ratio > nifty50.sharpe_ratio ? "↑" : "↓"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-[9px] text-red-500 uppercase font-bold tracking-widest opacity-70">Max Drawdown</div>
+                            <div className="text-sm font-bold text-red-500 tabular-nums">{pct(fund.max_drawdown)}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Volatility</div>
+                            <div className="text-sm font-bold tabular-nums">{pct(fund.volatility)}</div>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Sharpe Ratio</div>
-                          <div className="text-sm font-bold tabular-nums">{fixed(fund.sharpe_ratio)}</div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="text-[9px] text-red-500 uppercase font-bold tracking-widest opacity-70">Max Drawdown</div>
-                          <div className="text-sm font-bold text-red-500 tabular-nums">{pct(fund.max_drawdown)}</div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-70">Volatility</div>
-                          <div className="text-sm font-bold tabular-nums">{pct(fund.volatility)}</div>
-                        </div>
-                      </div>
                       
                       <div className="pt-4 flex flex-col gap-4 border-t border-dashed">
                         <div className="flex items-center justify-between">
