@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
       // Fetch NAV data for all selected funds (paginate to get all rows)
       // Supabase returns max 1000 rows per request by default
-      const fundIds = allocations.map((a) => a.fundId)
+      const fundIds = Array.from(new Set([...allocations.map((a) => a.fundId), 1])) // Always include Nifty 50 (ID 1)
       const PAGE = 1000
       let navRows: { fund_id: number; date: string; nav_value: number }[] = []
       let from = 0
@@ -72,25 +72,28 @@ export async function POST(req: NextRequest) {
     const drawdownSeries = computeDrawdownSeries(portfolioNav)
     const rollingReturns = computeRolling3YCAGR(portfolioNav)
 
-    // Also compute individual fund metrics for comparison
-    const individualMetrics = allocations.map((a) => {
-      const navSeries = navByFund.get(a.fundId) ?? []
-      if (navSeries.length < 2) return null
-      // Rebase to 100
-      const base = navSeries[0].value
-      const rebased = navSeries.map((n) => ({ date: n.date, value: (n.value / base) * 100 }))
-      return {
-        fundId: a.fundId,
-        metrics: computeAllMetrics(rebased),
+    // Compute Nifty 50 (ID 1) metrics and NAV for comparison
+    const nifty50NavRaw = navByFund.get(1) ?? []
+    let benchmarkNav: { date: string; value: number }[] = []
+    let benchmarkMetrics = null
+
+    if (nifty50NavRaw.length > 0 && portfolioNav.length > 0) {
+      const startDate = portfolioNav[0].date
+      const filteredNifty = nifty50NavRaw.filter(n => n.date >= startDate)
+      if (filteredNifty.length > 0) {
+        const base = filteredNifty[0].value
+        benchmarkNav = filteredNifty.map(n => ({ date: n.date, value: (n.value / base) * 100 }))
+        benchmarkMetrics = computeAllMetrics(benchmarkNav)
       }
-    })
+    }
 
     return NextResponse.json({
       portfolioNav,
       metrics,
       drawdownSeries,
       rollingReturns,
-      individualMetrics,
+      benchmarkNav,
+      benchmarkMetrics,
     })
   } catch (e) {
     console.error(e)
