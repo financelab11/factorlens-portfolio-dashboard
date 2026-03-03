@@ -176,42 +176,42 @@ export function PortfolioBuilder({ funds, allocations, onChange, onGenerate, loa
       <div className="relative">
         <Button
           variant="outline"
-          className="w-full gap-2 border-dashed"
+          className="w-full h-12 gap-3 border-dashed border-2 rounded-2xl font-bold text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
           onClick={() => setOpen(!open)}
           disabled={allocations.length >= 10}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
           Add Fund
-          <ChevronDown className={cn("h-3 w-3 ml-auto transition-transform", open && "rotate-180")} />
+          <ChevronDown className={cn("h-4 w-4 ml-auto transition-transform duration-300", open && "rotate-180")} />
         </Button>
 
         {open && (
-          <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-popover border rounded-xl shadow-xl overflow-hidden">
+          <div className="absolute top-full left-0 right-0 mt-3 z-50 bg-popover border-2 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top">
             {/* Search */}
-            <div className="p-3 border-b">
+            <div className="p-4 border-b">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
-                  placeholder="Search funds..."
+                  placeholder="Search 28 factor indexes..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 h-8 text-sm"
+                  className="pl-10 h-11 text-[15px] font-medium rounded-xl border-muted bg-muted/30 focus-visible:ring-primary/20"
                   autoFocus
                 />
               </div>
             </div>
 
             {/* Category filter */}
-            <div className="p-2 border-b flex gap-1 overflow-x-auto scrollbar-hide">
+            <div className="p-2.5 border-b flex gap-1.5 overflow-x-auto no-scrollbar bg-muted/10">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setCatFilter(cat)}
                   className={cn(
-                    "px-2.5 py-1 rounded-md text-xs whitespace-nowrap font-medium transition-colors flex-shrink-0",
+                    "px-3.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-bold transition-all flex-shrink-0",
                     catFilter === cat
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-accent"
+                      ? "bg-primary text-primary-foreground shadow-md scale-105"
+                      : "bg-background text-muted-foreground hover:bg-accent border"
                   )}
                 >
                   {cat}
@@ -220,28 +220,35 @@ export function PortfolioBuilder({ funds, allocations, onChange, onGenerate, loa
             </div>
 
             {/* Fund list */}
-            <div className="max-h-64 overflow-y-auto">
+            <div className="max-h-80 overflow-y-auto scrollbar-thin">
               {filteredFunds.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground text-center">No funds found</p>
+                <div className="p-12 text-center space-y-2">
+                  <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center mx-auto opacity-50">
+                    <Search className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-bold text-muted-foreground">No funds found</p>
+                </div>
               ) : (
                 filteredFunds.map((fund) => (
                   <button
                     key={fund.id}
                     onClick={() => addFund(fund)}
-                    className="w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-center justify-between gap-3 group"
+                    className="w-full text-left px-5 py-4 hover:bg-accent/60 transition-all flex items-center justify-between gap-4 border-b last:border-0 group active:bg-accent"
                   >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium leading-tight truncate">{fund.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className={cn("text-xs", CATEGORY_COLORS[fund.category])}>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[14px] font-black leading-tight text-foreground group-hover:text-primary transition-colors truncate">{fund.name}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <Badge variant="secondary" className={cn("text-[9px] h-4 py-0 px-1.5 uppercase font-bold tracking-wider", CATEGORY_COLORS[fund.category])}>
                           {fund.category}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          CAGR: {(fund.cagr * 100).toFixed(1)}%
+                        <span className="text-[11px] font-bold text-teal-600">
+                          {(fund.cagr * 100).toFixed(1)}% CAGR
                         </span>
                       </div>
                     </div>
-                    <Plus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary flex-shrink-0" />
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                      <Plus className="h-4 w-4" />
+                    </div>
                   </button>
                 ))
               )}
