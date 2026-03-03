@@ -110,12 +110,12 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           {/* Header with Mobile Filter Toggle */}
-          <div className="flex flex-col mb-8 gap-4">
+          <div className="flex flex-col mb-6 gap-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Portfolio Builder</h1>
-                <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-                  Backtest up to 20 years of performance data.
+                <h1 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Portfolio Builder</h1>
+                <p className="text-muted-foreground mt-1.5 text-sm sm:text-base font-medium">
+                  Institutional-grade backtesting with 20+ years of NSE data.
                 </p>
               </div>
             </div>
@@ -123,22 +123,23 @@ export default function DashboardPage() {
             <div className="lg:hidden">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button size="lg" className="w-full gap-2 bg-gradient-to-r from-indigo-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white border-0 shadow-lg font-bold">
-                    <SlidersHorizontal className="h-5 w-5" />
+                  <Button size="lg" className="w-full h-14 gap-3 bg-gradient-to-r from-indigo-600 via-indigo-500 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white border-0 shadow-xl font-black text-base rounded-2xl group">
+                    <SlidersHorizontal className="h-5 w-5 group-hover:rotate-180 transition-transform duration-500" />
                     Configure Your Portfolio
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="h-[92vh] overflow-y-auto rounded-t-[2rem]">
-                  <SheetHeader className="mb-4 text-left">
-                    <SheetTitle className="text-xl">Customize Strategy</SheetTitle>
-                    <SheetDescription className="text-xs">
-                      Select funds and adjust weights (total must be 100%).
+                <SheetContent side="bottom" className="h-[94vh] overflow-y-auto rounded-t-[2.5rem] border-t-primary/20 p-6 pt-2">
+                  <div className="w-12 h-1.5 bg-muted rounded-full mx-auto my-4" />
+                  <SheetHeader className="mb-6 text-left">
+                    <SheetTitle className="text-2xl font-black">Customize Strategy</SheetTitle>
+                    <SheetDescription className="text-sm font-medium">
+                      Select up to 10 funds and adjust weights. Total must be 100%.
                     </SheetDescription>
                   </SheetHeader>
                   <div className="py-2">
                     {fundsLoading ? (
                       <div className="flex items-center justify-center py-12">
-                        <div className="h-6 w-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                        <div className="h-8 w-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
                       </div>
                     ) : (
                       <PortfolioBuilder
