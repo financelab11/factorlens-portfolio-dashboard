@@ -135,11 +135,18 @@ export function NavChart({
   )
 }
 
-export function DrawdownChart({ data }: { data: DrawdownPoint[] }) {
+export function DrawdownChart({ data, benchmarkData, name = "Portfolio", benchmarkName = "Nifty 50" }: { data: DrawdownPoint[], benchmarkData?: DrawdownPoint[], name?: string, benchmarkName?: string }) {
   const sampled = sampleData(data, 400)
+  const sampledBenchmark = benchmarkData ? sampleData(benchmarkData, 400) : []
+  
+  const combinedData = sampled.map((p, i) => ({
+    ...p,
+    benchmark: sampledBenchmark[i]?.value,
+  }))
+
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <AreaChart data={sampled} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={combinedData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
@@ -164,25 +171,44 @@ export function DrawdownChart({ data }: { data: DrawdownPoint[] }) {
         />
         <ReferenceLine y={0} stroke="hsl(var(--border))" />
         <Tooltip content={<CustomTooltip formatter={(v) => `${v.toFixed(2)}%`} />} />
+        {benchmarkData && <Legend verticalAlign="top" height={36} iconType="plainline" />}
         <Area
           type="monotone"
           dataKey="value"
-          name="Drawdown"
+          name={name}
           stroke="#ef4444"
           strokeWidth={1.5}
           fill="url(#ddGrad)"
           dot={false}
         />
+        {benchmarkData && (
+          <Line
+            type="monotone"
+            dataKey="benchmark"
+            name={benchmarkName}
+            stroke="#94a3b8"
+            strokeWidth={1.5}
+            strokeDasharray="4 4"
+            dot={false}
+          />
+        )}
       </AreaChart>
     </ResponsiveContainer>
   )
 }
 
-export function RollingReturnChart({ data }: { data: RollingReturn[] }) {
+export function RollingReturnChart({ data, benchmarkData, name = "Portfolio", benchmarkName = "Nifty 50" }: { data: RollingReturn[], benchmarkData?: RollingReturn[], name?: string, benchmarkName?: string }) {
   const sampled = sampleData(data, 400)
+  const sampledBenchmark = benchmarkData ? sampleData(benchmarkData, 400) : []
+  
+  const combinedData = sampled.map((p, i) => ({
+    ...p,
+    benchmark: sampledBenchmark[i]?.value,
+  }))
+
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={sampled} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+      <LineChart data={combinedData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
         <XAxis
           dataKey="date"
@@ -201,15 +227,27 @@ export function RollingReturnChart({ data }: { data: RollingReturn[] }) {
         />
         <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="4 4" />
         <Tooltip content={<CustomTooltip formatter={(v) => `${v.toFixed(2)}%`} />} />
+        {benchmarkData && <Legend verticalAlign="top" height={36} iconType="plainline" />}
         <Line
           type="monotone"
           dataKey="value"
-          name="3Y Rolling CAGR"
+          name={name}
           stroke="#0d9488"
           strokeWidth={2}
           dot={false}
           activeDot={{ r: 4 }}
         />
+        {benchmarkData && (
+          <Line
+            type="monotone"
+            dataKey="benchmark"
+            name={benchmarkName}
+            stroke="#94a3b8"
+            strokeWidth={1.5}
+            strokeDasharray="4 4"
+            dot={false}
+          />
+        )}
       </LineChart>
     </ResponsiveContainer>
   )
