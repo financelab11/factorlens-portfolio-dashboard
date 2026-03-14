@@ -13,13 +13,15 @@ export async function GET(
   try {
     const { id } = await params
     const fundId = parseInt(id)
-    if (isNaN(fundId)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
-    const { data: fund, error: fundError } = await supabase
-      .from('funds')
-      .select('*')
-      .eq('id', fundId)
-      .single()
+    // Support lookup by numeric ID or by fund code (e.g. "N50")
+    let fundQuery
+    if (isNaN(fundId)) {
+      fundQuery = supabase.from('funds').select('*').eq('code', id).single()
+    } else {
+      fundQuery = supabase.from('funds').select('*').eq('id', fundId).single()
+    }
+    const { data: fund, error: fundError } = await fundQuery
 
     if (fundError || !fund) return NextResponse.json({ error: 'Fund not found' }, { status: 404 })
 
@@ -31,7 +33,7 @@ export async function GET(
       const { data, error } = await supabase
         .from('nav_data')
         .select('date, nav_value')
-        .eq('fund_id', fundId)
+        .eq('fund_id', fund.id)
         .order('date', { ascending: true })
         .range(from, from + PAGE - 1)
       if (error) break
