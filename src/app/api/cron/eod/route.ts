@@ -151,8 +151,9 @@ async function fetchNiftyIndex(
 
   return rows
     .map((row) => {
-      const dateStr  = row['Date'] ?? row['date'] ?? ''
-      const closeStr = row['Close'] ?? row['CLOSE'] ?? row['close'] ?? ''
+      // niftyindices uses "HistoricalDate" as the date field name
+      const dateStr  = row['HistoricalDate'] ?? row['Date'] ?? row['date'] ?? ''
+      const closeStr = row['CLOSE'] ?? row['Close'] ?? row['close'] ?? ''
       const date  = niftyDateToISO(dateStr)
       const value = parseNum(closeStr)
       return { date, value }
@@ -353,12 +354,22 @@ export async function GET(req: NextRequest) {
         continue
       }
 
-      const { error: upsertErr } = await supabase
+      // Delete any existing rows for this date range before inserting
+      const minDate = records[0].date
+      const maxDate = records[records.length - 1].date
+      await supabase
         .from('nav_data')
-        .upsert(records, { onConflict: 'fund_id,date' })
+        .delete()
+        .eq('fund_id', fundId)
+        .gte('date', minDate)
+        .lte('date', maxDate)
 
-      if (upsertErr) {
-        log.push(`[${result.code}] upsert error: ${upsertErr.message}`)
+      const { error: insertErr } = await supabase
+        .from('nav_data')
+        .insert(records)
+
+      if (insertErr) {
+        log.push(`[${result.code}] insert error: ${insertErr.message}`)
       } else {
         log.push(`[${result.code}] inserted ${records.length} rows (up to ${records[records.length - 1].date})`)
         totalInserted += records.length

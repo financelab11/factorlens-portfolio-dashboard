@@ -121,8 +121,8 @@ def fetch_nifty_index(index_name: str, from_iso: str, to_iso: str, retries=3):
             rows = json.loads(outer.get("d", "[]"))
             result = []
             for row in rows:
-                date_str  = row.get("Date") or row.get("date", "")
-                close_str = row.get("Close") or row.get("CLOSE") or row.get("close", "")
+                date_str  = row.get("HistoricalDate") or row.get("Date") or row.get("date", "")
+                close_str = row.get("CLOSE") or row.get("Close") or row.get("close", "")
                 date_iso  = nifty_resp_to_iso(date_str)
                 try:
                     val = float(close_str.replace(",", ""))
@@ -256,10 +256,12 @@ def main():
             print("no new data")
             continue
 
-        execute_values(cur,
-            "INSERT INTO nav_data (fund_id, date, nav_value) VALUES %s "
-            "ON CONFLICT (fund_id, date) DO UPDATE SET nav_value = EXCLUDED.nav_value",
-            new_rows)
+        min_date, max_date = new_rows[0][1], new_rows[-1][1]
+        cur.execute(
+            "DELETE FROM nav_data WHERE fund_id = %s AND date BETWEEN %s AND %s",
+            (fund_id, min_date, max_date)
+        )
+        execute_values(cur, "INSERT INTO nav_data (fund_id, date, nav_value) VALUES %s", new_rows)
         conn.commit()
         print(f"{len(new_rows)} rows → latest {new_rows[-1][1]}")
         total_inserted += len(new_rows)
@@ -289,10 +291,12 @@ def main():
             print("no new data")
             continue
 
-        execute_values(cur,
-            "INSERT INTO nav_data (fund_id, date, nav_value) VALUES %s "
-            "ON CONFLICT (fund_id, date) DO UPDATE SET nav_value = EXCLUDED.nav_value",
-            new_rows)
+        min_date, max_date = new_rows[0][1], new_rows[-1][1]
+        cur.execute(
+            "DELETE FROM nav_data WHERE fund_id = %s AND date BETWEEN %s AND %s",
+            (fund_id, min_date, max_date)
+        )
+        execute_values(cur, "INSERT INTO nav_data (fund_id, date, nav_value) VALUES %s", new_rows)
         conn.commit()
         print(f"{len(new_rows)} rows → latest {new_rows[-1][1]}")
         total_inserted += len(new_rows)
