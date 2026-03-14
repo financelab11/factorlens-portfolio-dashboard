@@ -163,7 +163,7 @@ def compute_cagr(nav: list) -> float:
     start_val, end_val = nav[0][1], nav[-1][1]
     start_dt = datetime.strptime(nav[0][0], "%Y-%m-%d")
     end_dt   = datetime.strptime(nav[-1][0], "%Y-%m-%d")
-    years = (end_dt - start_dt).days / 365.25
+    years = (end_dt - start_dt).days / 365
     if years <= 0:
         return 0.0
     return (end_val / start_val) ** (1.0 / years) - 1.0

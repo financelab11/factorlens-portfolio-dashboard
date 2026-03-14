@@ -26,9 +26,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Weights must sum to 100' }, { status: 400 })
     }
 
+    // Look up Nifty 50 (N50) by code to avoid hardcoding ID
+    const { data: n50Fund } = await supabase.from('funds').select('id').eq('code', 'N50').single()
+    const niftyId = n50Fund?.id ?? 1
+
       // Fetch NAV data for all selected funds (paginate to get all rows)
       // Supabase returns max 1000 rows per request by default
-      const fundIds = Array.from(new Set([...allocations.map((a) => a.fundId), 1])) // Always include Nifty 50 (ID 1)
+      const fundIds = Array.from(new Set([...allocations.map((a) => a.fundId), niftyId])) // Always include Nifty 50
       const PAGE = 1000
       let navRows: { fund_id: number; date: string; nav_value: number }[] = []
       let from = 0
@@ -72,8 +76,8 @@ export async function POST(req: NextRequest) {
     const drawdownSeries = computeDrawdownSeries(portfolioNav)
     const rollingReturns = computeRolling3YCAGR(portfolioNav)
 
-    // Compute Nifty 50 (ID 1) metrics and NAV for comparison
-    const nifty50NavRaw = navByFund.get(1) ?? []
+    // Compute Nifty 50 metrics and NAV for comparison
+    const nifty50NavRaw = navByFund.get(niftyId) ?? []
     let benchmarkNav: { date: string; value: number }[] = []
     let benchmarkMetrics = null
     let benchmarkDrawdown: { date: string; value: number }[] = []
