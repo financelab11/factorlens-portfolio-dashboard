@@ -133,7 +133,7 @@ async function fetchNiftyIndex(
     return []
   }
 
-  return rows
+  const parsed = rows
     .map((row) => {
       const dateStr  = row['HistoricalDate'] ?? row['Date'] ?? row['date'] ?? ''
       const closeStr = row['CLOSE'] ?? row['Close'] ?? row['close'] ?? ''
@@ -142,7 +142,13 @@ async function fetchNiftyIndex(
       return { date, value }
     })
     .filter((r) => r.date.length === 10 && !isNaN(r.value) && r.value > 0)
-    .sort((a, b) => a.date.localeCompare(b.date)) // sort ascending
+
+  // Deduplicate by date — keep the last value for each date
+  const deduped = new Map<string, number>()
+  for (const r of parsed) deduped.set(r.date, r.value)
+  return Array.from(deduped.entries())
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 async function fetchYahoo(
@@ -186,12 +192,19 @@ async function fetchYahoo(
     result.indicators?.quote?.[0]?.close ??
     []
 
-  return timestamps
+  const raw = timestamps
     .map((ts, i) => ({
       date: new Date(ts * 1000).toISOString().slice(0, 10),
       value: closes[i] ?? NaN,
     }))
     .filter((r) => !isNaN(r.value) && r.value > 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  // Deduplicate by date — keep the last value for each date
+  const deduped = new Map<string, number>()
+  for (const r of raw) deduped.set(r.date, r.value)
+  return Array.from(deduped.entries())
+    .map(([date, value]) => ({ date, value }))
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
@@ -334,6 +347,10 @@ export async function GET(req: NextRequest) {
         const rows    = rawRows
           .filter((r) => r.date > newAfter)
           .map((r)   => ({ date: r.date, value: r.value * scale }))
+        // Debug: log raw count to help diagnose empty results
+        if (rawRows.length === 0) {
+          log.push(`[${code}] WARNING: API returned 0 rows for range ${fromISO}→${today} (indexName="${indexName}")`)
+        }
         nseResults.push({ code, fundId, rows, error: null })
       } catch (e) {
         nseResults.push({ code, fundId, rows: [], error: String(e) })
