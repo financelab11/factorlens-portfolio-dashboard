@@ -285,46 +285,53 @@ export async function GET(req: NextRequest) {
 
     const defaultFrom = '2026-02-28' // fallback if no existing data
 
-    // ── 2. Fetch new data for all funds in parallel ──────────────────────────
-    const nseJobs = NSE_INDICES.map(async ({ code, indexName }) => {
+    // ── 2. Fetch new data ────────────────────────────────────────────────────
+    // NSE indices: sequential with small delay to avoid niftyindices rate limits
+    const nseResults: Array<{ code: string; fundId?: number; rows: { date: string; value: number }[]; error: string | null; skipped?: boolean }> = []
+    for (const { code, indexName } of NSE_INDICES) {
       const fundId = codeToId.get(code)
-      if (!fundId) return { code, rows: [], error: 'Fund not found in DB' }
+      if (!fundId) { nseResults.push({ code, rows: [], error: 'Fund not found in DB' }); continue }
 
       const lastDate = latestByFund.get(fundId) ?? defaultFrom
       const fromISO  = addDays(lastDate, 1)
 
       if (fromISO > today) {
-        return { code, rows: [], error: null, skipped: true }
+        nseResults.push({ code, rows: [], error: null, skipped: true })
+        continue
       }
 
       try {
         const rows = await fetchNiftyIndex(indexName, fromISO, today)
-        return { code, fundId, rows, error: null }
+        nseResults.push({ code, fundId, rows, error: null })
       } catch (e) {
-        return { code, fundId, rows: [], error: String(e) }
+        nseResults.push({ code, fundId, rows: [], error: String(e) })
       }
-    })
+      // Small delay between requests to avoid rate limiting
+      await new Promise((r) => setTimeout(r, 350))
+    }
 
+    // Yahoo Finance: parallel (only 2 symbols, no rate limit issues)
     const yahooJobs = YAHOO_FUNDS.map(async ({ code, symbol }) => {
       const fundId = codeToId.get(code)
-      if (!fundId) return { code, rows: [], error: 'Fund not found in DB' }
+      if (!fundId) return { code, rows: [] as { date: string; value: number }[], error: 'Fund not found in DB' }
 
       const lastDate = latestByFund.get(fundId) ?? defaultFrom
       const fromISO  = addDays(lastDate, 1)
 
       if (fromISO > today) {
-        return { code, rows: [], error: null, skipped: true }
+        return { code, rows: [] as { date: string; value: number }[], error: null, skipped: true }
       }
 
       try {
         const rows = await fetchYahoo(symbol, fromISO, today)
         return { code, fundId, rows, error: null }
       } catch (e) {
-        return { code, fundId, rows: [], error: String(e) }
+        return { code, fundId, rows: [] as { date: string; value: number }[], error: String(e) }
       }
     })
 
-    const allResults = await Promise.all([...nseJobs, ...yahooJobs])
+    const yahooResults = await Promise.all(yahooJobs)
+    const allResults = [...nseResults, ...yahooResults]
 
     // ── 3. Upsert new NAV rows into Supabase ─────────────────────────────────
     let totalInserted = 0
