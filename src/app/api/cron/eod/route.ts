@@ -45,7 +45,6 @@ const NSE_INDICES: { code: string; indexName: string }[] = [
   { code: 'N500MF50',     indexName: 'NIFTY500 MULTIFACTOR MQVLV 50' },
 ]
 
-// S&P 500 and Gold BeES via Yahoo Finance
 const YAHOO_FUNDS: { code: string; symbol: string }[] = [
   { code: 'SPX',  symbol: '^GSPC' },
   { code: 'GOLD', symbol: 'GOLDBEES.NS' },
@@ -59,7 +58,6 @@ const MONTHS: Record<string, string> = {
   Sep: '09', Oct: '10', Nov: '11', Dec: '12',
 }
 
-/** "28 Feb 2026"  →  "2026-02-28" */
 function niftyDateToISO(dateStr: string): string {
   const parts = dateStr.trim().split(/\s+/)
   if (parts.length !== 3) return ''
@@ -69,7 +67,6 @@ function niftyDateToISO(dateStr: string): string {
   return `${year}-${month}-${day.padStart(2, '0')}`
 }
 
-/** "2026-02-28" → "28-Feb-2026"  (niftyindices request format) */
 function isoToNiftyReqDate(iso: string): string {
   const d = new Date(iso)
   const day  = String(d.getUTCDate()).padStart(2, '0')
@@ -78,44 +75,33 @@ function isoToNiftyReqDate(iso: string): string {
   return `${day}-${mon}-${year}`
 }
 
-/** Today's date as "YYYY-MM-DD" in IST (UTC+5:30) */
 function todayIST(): string {
   const now = new Date()
-  // Advance by 5h30m to get IST
   const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000)
   return ist.toISOString().slice(0, 10)
 }
 
-/** Add N calendar days to an ISO date string */
 function addDays(iso: string, n: number): string {
   const d = new Date(iso)
   d.setUTCDate(d.getUTCDate() + n)
   return d.toISOString().slice(0, 10)
 }
 
-/** Strip commas and parse float ("22,124.70" → 22124.70) */
 function parseNum(s: string): number {
   return parseFloat(s.replace(/,/g, ''))
 }
 
-// ── Scraping functions ───────────────────────────────────────────────────────
+// ── Scrapers ─────────────────────────────────────────────────────────────────
 
-/**
- * Fetch historical closing values from niftyindices.com for a given index.
- * Returns an array of { date: "YYYY-MM-DD", value: number }.
- */
 async function fetchNiftyIndex(
   indexName: string,
   fromISO: string,
   toISO: string
 ): Promise<{ date: string; value: number }[]> {
-  const fromReq = isoToNiftyReqDate(fromISO)
-  const toReq   = isoToNiftyReqDate(toISO)
-
   const cinfo = JSON.stringify({
     name: indexName,
-    startDate: fromReq,
-    endDate: toReq,
+    startDate: isoToNiftyReqDate(fromISO),
+    endDate:   isoToNiftyReqDate(toISO),
     indexName: indexName,
   })
 
@@ -124,34 +110,31 @@ async function fetchNiftyIndex(
     {
       method: 'POST',
       headers: {
-        'Content-Type':    'application/json; charset=utf-8',
-        'Accept':          'application/json, text/javascript, */*; q=0.01',
-        'X-Requested-With':'XMLHttpRequest',
-        'Referer':         'https://www.niftyindices.com/reports/historical-data',
-        'User-Agent':      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Content-Type':     'application/json; charset=utf-8',
+        'Accept':           'application/json, text/javascript, */*; q=0.01',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Referer':          'https://www.niftyindices.com/reports/historical-data',
+        'User-Agent':       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       },
       body: JSON.stringify({ cinfo }),
       signal: AbortSignal.timeout(20_000),
     }
   )
 
-  if (!res.ok) throw new Error(`niftyindices HTTP ${res.status} for ${indexName}`)
+  if (!res.ok) throw new Error(`niftyindices HTTP ${res.status}`)
 
   const outer = await res.json() as { d: string }
   if (!outer.d) return []
 
-  // outer.d is a JSON-encoded array string
   let rows: Record<string, string>[]
   try {
     rows = JSON.parse(outer.d)
   } catch {
-    // fall back: try as-is if already parsed
     return []
   }
 
   return rows
     .map((row) => {
-      // niftyindices uses "HistoricalDate" as the date field name
       const dateStr  = row['HistoricalDate'] ?? row['Date'] ?? row['date'] ?? ''
       const closeStr = row['CLOSE'] ?? row['Close'] ?? row['close'] ?? ''
       const date  = niftyDateToISO(dateStr)
@@ -159,19 +142,15 @@ async function fetchNiftyIndex(
       return { date, value }
     })
     .filter((r) => r.date.length === 10 && !isNaN(r.value) && r.value > 0)
+    .sort((a, b) => a.date.localeCompare(b.date)) // sort ascending
 }
 
-/**
- * Fetch closing prices from Yahoo Finance for the given symbol.
- * period1 / period2 are UNIX timestamps (seconds).
- */
 async function fetchYahoo(
   symbol: string,
   fromISO: string,
   toISO: string
 ): Promise<{ date: string; value: number }[]> {
   const period1 = Math.floor(new Date(fromISO).getTime() / 1000)
-  // Add 1 day to toISO so the last day is included
   const period2 = Math.floor(new Date(addDays(toISO, 1)).getTime() / 1000)
   const encodedSymbol = encodeURIComponent(symbol)
 
@@ -181,14 +160,13 @@ async function fetchYahoo(
 
   const res = await fetch(url, {
     headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       'Accept': 'application/json',
     },
     signal: AbortSignal.timeout(15_000),
   })
 
-  if (!res.ok) throw new Error(`Yahoo Finance HTTP ${res.status} for ${symbol}`)
+  if (!res.ok) throw new Error(`Yahoo Finance HTTP ${res.status}`)
 
   const json = await res.json() as {
     chart: {
@@ -196,7 +174,6 @@ async function fetchYahoo(
         timestamp?: number[]
         indicators?: { adjclose?: Array<{ adjclose?: number[] }>; quote?: Array<{ close?: number[] }> }
       }>
-      error?: unknown
     }
   }
 
@@ -204,23 +181,45 @@ async function fetchYahoo(
   if (!result) return []
 
   const timestamps = result.timestamp ?? []
-  // Prefer adjusted close; fall back to regular close
   const closes =
     result.indicators?.adjclose?.[0]?.adjclose ??
     result.indicators?.quote?.[0]?.close ??
     []
 
-  const points: { date: string; value: number }[] = []
-  for (let i = 0; i < timestamps.length; i++) {
-    const val = closes[i]
-    if (val == null || isNaN(val) || val <= 0) continue
-    const date = new Date(timestamps[i] * 1000).toISOString().slice(0, 10)
-    points.push({ date, value: val })
-  }
-  return points
+  return timestamps
+    .map((ts, i) => ({
+      date: new Date(ts * 1000).toISOString().slice(0, 10),
+      value: closes[i] ?? NaN,
+    }))
+    .filter((r) => !isNaN(r.value) && r.value > 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// ── Metric computation ───────────────────────────────────────────────────────
+// ── Scale computation ─────────────────────────────────────────────────────────
+//
+// The original data.json stored normalized/rebased NAV values that are on a
+// DIFFERENT scale from raw market values (niftyindices / Yahoo Finance).
+// To maintain continuity, we compute a per-fund scale factor:
+//
+//   scale = last_db_value / raw_scraped_value_at_last_db_date
+//
+// We fetch an overlap window (≥14 days before last DB date) so the anchor
+// date (last_db_date) is included in the scraped batch.
+//
+function computeScale(
+  rows: { date: string; value: number }[],
+  lastDbDate: string,
+  lastDbValue: number
+): number {
+  // Find the best anchor: the most-recent scraped row whose date ≤ lastDbDate
+  const candidates = rows.filter((r) => r.date <= lastDbDate)
+  if (candidates.length === 0) return 1
+  const anchor = candidates[candidates.length - 1] // last in sorted-ascending list
+  if (!anchor || anchor.value <= 0) return 1
+  return lastDbValue / anchor.value
+}
+
+// ── Metric computation ────────────────────────────────────────────────────────
 
 function computeMetricsFromNav(nav: NavPoint[]) {
   const cagr    = computeCAGR(nav)
@@ -238,21 +237,28 @@ function computeMetricsFromNav(nav: NavPoint[]) {
 
 // ── Main handler ─────────────────────────────────────────────────────────────
 
-export const maxDuration = 300 // Vercel Pro: 300s
+export const maxDuration = 300
 
 export async function GET(req: NextRequest) {
-  // Allow Vercel's built-in cron auth OR a manual CRON_SECRET bearer token
   const authHeader = req.headers.get('authorization') ?? ''
   const cronSecret = process.env.CRON_SECRET
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // ?cleanup=true  →  delete all records after the cleanup date and re-scrape
+  const url = new URL(req.url)
+  const cleanupMode  = url.searchParams.get('cleanup') === 'true'
+  const cleanupAfter = url.searchParams.get('after') ?? '2026-02-28' // delete > this date
+
   const today = todayIST()
-  const log: string[] = [`[EOD scraper] started at ${new Date().toISOString()} — today IST: ${today}`]
+  const log: string[] = [
+    `[EOD scraper] started at ${new Date().toISOString()} — today IST: ${today}`,
+    cleanupMode ? `[cleanup mode] deleting records after ${cleanupAfter}` : '[normal mode]',
+  ]
 
   try {
-    // ── 1. Get fund IDs and their latest nav date ────────────────────────────
+    // ── 1. Load funds ────────────────────────────────────────────────────────
     const { data: funds, error: fundsErr } = await supabase
       .from('funds')
       .select('id, code')
@@ -262,84 +268,116 @@ export async function GET(req: NextRequest) {
     }
 
     const codeToId = new Map<string, number>(funds.map((f) => [f.code, f.id]))
+    const fundIds  = funds.map((f) => f.id)
 
-    // Get the latest date per fund in nav_data
-    const fundIds = funds.map((f) => f.id)
-    const { data: latestDates, error: latestErr } = await supabase
+    // ── 2. In cleanup mode: delete incorrectly-scaled records ────────────────
+    if (cleanupMode) {
+      const { error: delErr } = await supabase
+        .from('nav_data')
+        .delete()
+        .in('fund_id', fundIds)
+        .gt('date', cleanupAfter)
+
+      if (delErr) {
+        return NextResponse.json({ error: 'Cleanup delete failed: ' + delErr.message }, { status: 500 })
+      }
+      log.push(`[cleanup] deleted all nav_data records with date > ${cleanupAfter}`)
+    }
+
+    // ── 3. Get latest date AND value per fund ────────────────────────────────
+    // Fetch the single latest row per fund using order + limit trick
+    const { data: latestRows, error: latestErr } = await supabase
       .from('nav_data')
-      .select('fund_id, date')
+      .select('fund_id, date, nav_value')
       .in('fund_id', fundIds)
       .order('date', { ascending: false })
 
     if (latestErr) {
-      return NextResponse.json({ error: 'Failed to load latest dates: ' + latestErr.message }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to load latest nav: ' + latestErr.message }, { status: 500 })
     }
 
-    // Build map: fund_id → latest_date
-    const latestByFund = new Map<number, string>()
-    for (const row of latestDates ?? []) {
+    const latestByFund = new Map<number, { date: string; value: number }>()
+    for (const row of latestRows ?? []) {
       if (!latestByFund.has(row.fund_id)) {
-        latestByFund.set(row.fund_id, row.date)
+        latestByFund.set(row.fund_id, { date: row.date, value: Number(row.nav_value) })
       }
     }
 
-    const defaultFrom = '2026-02-28' // fallback if no existing data
+    const DEFAULT_LAST = { date: '2026-02-27', value: 100 }
+    // Overlap window: fetch 20 calendar days before lastDbDate so it is
+    // included in the scraped batch for anchor computation
+    const OVERLAP_DAYS = 20
 
-    // ── 2. Fetch new data ────────────────────────────────────────────────────
-    // NSE indices: sequential with small delay to avoid niftyindices rate limits
-    const nseResults: Array<{ code: string; fundId?: number; rows: { date: string; value: number }[]; error: string | null; skipped?: boolean }> = []
+    // ── 4. Fetch NSE indices sequentially (avoid rate limiting) ──────────────
+    const nseResults: Array<{
+      code: string; fundId?: number
+      rows: { date: string; value: number }[]
+      error: string | null; skipped?: boolean
+    }> = []
+
     for (const { code, indexName } of NSE_INDICES) {
       const fundId = codeToId.get(code)
       if (!fundId) { nseResults.push({ code, rows: [], error: 'Fund not found in DB' }); continue }
 
-      const lastDate = latestByFund.get(fundId) ?? defaultFrom
-      const fromISO  = addDays(lastDate, 1)
+      const last     = latestByFund.get(fundId) ?? DEFAULT_LAST
+      const fromISO  = addDays(last.date, -OVERLAP_DAYS) // overlap for anchor
+      const newAfter = last.date                          // only insert dates after this
 
-      if (fromISO > today) {
+      if (addDays(last.date, 1) > today) {
         nseResults.push({ code, rows: [], error: null, skipped: true })
         continue
       }
 
       try {
-        const rows = await fetchNiftyIndex(indexName, fromISO, today)
+        const rawRows = await fetchNiftyIndex(indexName, fromISO, today)
+        const scale   = computeScale(rawRows, last.date, last.value)
+        const rows    = rawRows
+          .filter((r) => r.date > newAfter)
+          .map((r)   => ({ date: r.date, value: r.value * scale }))
         nseResults.push({ code, fundId, rows, error: null })
       } catch (e) {
         nseResults.push({ code, fundId, rows: [], error: String(e) })
       }
-      // Small delay between requests to avoid rate limiting
+
       await new Promise((r) => setTimeout(r, 350))
     }
 
-    // Yahoo Finance: parallel (only 2 symbols, no rate limit issues)
-    const yahooJobs = YAHOO_FUNDS.map(async ({ code, symbol }) => {
-      const fundId = codeToId.get(code)
-      if (!fundId) return { code, rows: [] as { date: string; value: number }[], error: 'Fund not found in DB' }
+    // ── 5. Fetch Yahoo Finance (SPX, GOLD) ───────────────────────────────────
+    const yahooResults = await Promise.all(
+      YAHOO_FUNDS.map(async ({ code, symbol }) => {
+        const fundId = codeToId.get(code)
+        if (!fundId) return { code, rows: [] as { date: string; value: number }[], error: 'Fund not found in DB' }
 
-      const lastDate = latestByFund.get(fundId) ?? defaultFrom
-      const fromISO  = addDays(lastDate, 1)
+        const last     = latestByFund.get(fundId) ?? DEFAULT_LAST
+        const fromISO  = addDays(last.date, -OVERLAP_DAYS)
+        const newAfter = last.date
 
-      if (fromISO > today) {
-        return { code, rows: [] as { date: string; value: number }[], error: null, skipped: true }
-      }
+        if (addDays(last.date, 1) > today) {
+          return { code, rows: [] as { date: string; value: number }[], error: null, skipped: true }
+        }
 
-      try {
-        const rows = await fetchYahoo(symbol, fromISO, today)
-        return { code, fundId, rows, error: null }
-      } catch (e) {
-        return { code, fundId, rows: [] as { date: string; value: number }[], error: String(e) }
-      }
-    })
+        try {
+          const rawRows = await fetchYahoo(symbol, fromISO, today)
+          const scale   = computeScale(rawRows, last.date, last.value)
+          const rows    = rawRows
+            .filter((r) => r.date > newAfter)
+            .map((r)   => ({ date: r.date, value: r.value * scale }))
+          return { code, fundId, rows, error: null }
+        } catch (e) {
+          return { code, fundId, rows: [] as { date: string; value: number }[], error: String(e) }
+        }
+      })
+    )
 
-    const yahooResults = await Promise.all(yahooJobs)
     const allResults = [...nseResults, ...yahooResults]
 
-    // ── 3. Upsert new NAV rows into Supabase ─────────────────────────────────
+    // ── 6. Insert new rows ───────────────────────────────────────────────────
     let totalInserted = 0
     const fundsWithNewData = new Set<number>()
 
     for (const result of allResults) {
       if ('skipped' in result && result.skipped) {
-        log.push(`[${result.code}] up to date, skipped`)
+        log.push(`[${result.code}] up to date`)
         continue
       }
       if (result.error) {
@@ -351,15 +389,12 @@ export async function GET(req: NextRequest) {
         continue
       }
 
-      const fundId = (result as { fundId: number }).fundId
-      const records = result.rows
-        .filter((r) => r.date > (latestByFund.get(fundId) ?? defaultFrom))
-        .map((r) => ({ fund_id: fundId, date: r.date, nav_value: r.value }))
-
-      if (!records.length) {
-        log.push(`[${result.code}] no records after dedup`)
-        continue
-      }
+      const fundId  = (result as { fundId: number }).fundId
+      const records = result.rows.map((r) => ({
+        fund_id:   fundId,
+        date:      r.date,
+        nav_value: r.value,
+      }))
 
       // Delete any existing rows for this date range before inserting
       const minDate = records[0].date
@@ -378,19 +413,18 @@ export async function GET(req: NextRequest) {
       if (insertErr) {
         log.push(`[${result.code}] insert error: ${insertErr.message}`)
       } else {
-        log.push(`[${result.code}] inserted ${records.length} rows (up to ${records[records.length - 1].date})`)
+        const latestInserted = records[records.length - 1].date
+        log.push(`[${result.code}] inserted ${records.length} rows → ${latestInserted} (scale=${(result.rows[0].value / ((allResults.find(r => r.code === result.code) as any)?.rows?.[0]?.value || 1)).toFixed(4)})`)
         totalInserted += records.length
         fundsWithNewData.add(fundId)
       }
     }
 
-    // ── 4. Recompute metrics for funds that got new data ─────────────────────
+    // ── 7. Recompute metrics for updated funds ───────────────────────────────
     let metricsUpdated = 0
 
     if (fundsWithNewData.size > 0) {
       const updatedFundIds = Array.from(fundsWithNewData)
-
-      // Fetch full nav history for updated funds
       const PAGE = 1000
       let navRows: { fund_id: number; date: string; nav_value: number }[] = []
       let from = 0
@@ -407,14 +441,12 @@ export async function GET(req: NextRequest) {
         from += PAGE
       }
 
-      // Group by fund_id
       const navByFund = new Map<number, NavPoint[]>()
       for (const row of navRows) {
         if (!navByFund.has(row.fund_id)) navByFund.set(row.fund_id, [])
         navByFund.get(row.fund_id)!.push({ date: row.date, value: Number(row.nav_value) })
       }
 
-      // Update metrics for each fund
       for (const fundId of updatedFundIds) {
         const nav = navByFund.get(fundId)
         if (!nav || nav.length < 2) continue
@@ -434,14 +466,14 @@ export async function GET(req: NextRequest) {
           .eq('id', fundId)
 
         if (updateErr) {
-          log.push(`[metrics] fund ${fundId} update error: ${updateErr.message}`)
+          log.push(`[metrics] fund ${fundId}: ${updateErr.message}`)
         } else {
           metricsUpdated++
         }
       }
     }
 
-    log.push(`\nDone — ${totalInserted} new nav rows, ${metricsUpdated} fund metrics updated`)
+    log.push(`\nDone — ${totalInserted} new rows, ${metricsUpdated} fund metrics updated`)
     return NextResponse.json({ ok: true, log })
 
   } catch (e) {
