@@ -76,7 +76,7 @@ export function computeCAGR(navSeries: NavPoint[]): number {
   const end = navSeries[navSeries.length - 1].value
   const startDate = new Date(navSeries[0].date)
   const endDate = new Date(navSeries[navSeries.length - 1].date)
-  const years = (endDate.getTime() - startDate.getTime()) / (365.25 * 24 * 3600 * 1000)
+  const years = (endDate.getTime() - startDate.getTime()) / (365 * 24 * 3600 * 1000)
   if (years <= 0) return 0
   return Math.pow(end / start, 1 / years) - 1
 }

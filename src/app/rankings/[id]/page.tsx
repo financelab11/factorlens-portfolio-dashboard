@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { ArrowLeft, TrendingUp, TrendingDown, Activity, Shield, BarChart3, Info } from "lucide-react"
+import { ArrowLeft, TrendingUp, TrendingDown, Activity, Shield, BarChart3, Info, CalendarDays } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MetricsGrid } from "@/components/metrics-grid"
-import { NavChart, DrawdownChart, RollingReturnChart } from "@/components/portfolio-charts"
+import { NavChart, DrawdownChart, RollingReturnChart, FiscalYearChart } from "@/components/portfolio-charts"
 import { computeAllMetrics, computeDrawdownSeries, computeRolling3YCAGR } from "@/lib/calculations"
 import Link from "next/link"
 
@@ -38,67 +38,73 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
   const [fund, setFund] = useState<Fund | null>(null)
   const [nav, setNav] = useState<NavPoint[]>([])
   const [benchmarkNav, setBenchmarkNav] = useState<NavPoint[]>([])
+  const [rawFundNav, setRawFundNav] = useState<NavPoint[]>([])
+  const [rawBenchmarkNav, setRawBenchmarkNav] = useState<NavPoint[]>([])
   const [metrics, setMetrics] = useState<any>(null)
   const [benchmarkMetrics, setBenchmarkMetrics] = useState<any>(null)
-    const [drawdownSeries, setDrawdownSeries] = useState<any[]>([])
-    const [benchmarkDrawdown, setBenchmarkDrawdown] = useState<any[]>([])
-    const [rollingReturns, setRollingReturns] = useState<any[]>([])
-    const [benchmarkRolling, setBenchmarkRolling] = useState<any[]>([])
-    const [error, setError] = useState<string | null>(null)
+  const [drawdownSeries, setDrawdownSeries] = useState<any[]>([])
+  const [benchmarkDrawdown, setBenchmarkDrawdown] = useState<any[]>([])
+  const [rollingReturns, setRollingReturns] = useState<any[]>([])
+  const [benchmarkRolling, setBenchmarkRolling] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
-      async function fetchData() {
-        try {
-          const [fundRes, benchmarkRes] = await Promise.all([
-            fetch(`/api/funds/${id}`),
-            fetch(`/api/funds/1`) // Nifty 50
-          ])
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch fund by ID, and Nifty 50 by code (N50) — avoids hardcoding a DB row ID
+        const [fundRes, benchmarkRes] = await Promise.all([
+          fetch(`/api/funds/${id}`),
+          fetch(`/api/funds/N50`),
+        ])
 
-          const fundData = await fundRes.json()
-          const benchmarkData = await benchmarkRes.json()
+        const fundData = await fundRes.json()
+        const benchmarkData = await benchmarkRes.json()
 
-          if (fundData.error) throw new Error(fundData.error)
-          
-          setFund(fundData.fund)
-          
-          // Align NAV series to common start date
-          const fundNavRaw = fundData.nav
-          const benchNavRaw = benchmarkData.nav
-          
-          if (fundNavRaw.length > 0 && benchNavRaw.length > 0) {
-            const startDate = fundNavRaw[0].date
-            const filteredBench = benchNavRaw.filter((n: any) => n.date >= startDate)
-            
-            if (filteredBench.length > 0) {
-              const fundBase = fundNavRaw[0].value
-              const benchBase = filteredBench[0].value
-              
-              const rebasedFund = fundNavRaw.map((n: any) => ({ date: n.date, value: (n.value / fundBase) * 100 }))
-              const rebasedBench = filteredBench.map((n: any) => ({ date: n.date, value: (n.value / benchBase) * 100 }))
-              
-              setNav(rebasedFund)
-              setBenchmarkNav(rebasedBench)
-              
-              const fundMetrics = computeAllMetrics(rebasedFund)
-              const benchMetrics = computeAllMetrics(rebasedBench)
-              
-              setMetrics(fundMetrics)
-              setBenchmarkMetrics(benchMetrics)
-              setDrawdownSeries(computeDrawdownSeries(rebasedFund))
-              setBenchmarkDrawdown(computeDrawdownSeries(rebasedBench))
-              setRollingReturns(computeRolling3YCAGR(rebasedFund))
-              setBenchmarkRolling(computeRolling3YCAGR(rebasedBench))
-            }
+        if (fundData.error) throw new Error(fundData.error)
+
+        setFund(fundData.fund)
+
+        const fundNavRaw: NavPoint[] = fundData.nav
+        const benchNavRaw: NavPoint[] = benchmarkData.nav ?? []
+
+        // Store raw nav for the fiscal year chart (full benchmark history, no filtering)
+        setRawFundNav(fundNavRaw)
+        setRawBenchmarkNav(benchNavRaw)
+
+        if (fundNavRaw.length > 0 && benchNavRaw.length > 0) {
+          const startDate = fundNavRaw[0].date
+          const filteredBench = benchNavRaw.filter((n: NavPoint) => n.date >= startDate)
+
+          if (filteredBench.length > 0) {
+            const fundBase = fundNavRaw[0].value
+            const benchBase = filteredBench[0].value
+
+            const rebasedFund = fundNavRaw.map((n: NavPoint) => ({ date: n.date, value: (n.value / fundBase) * 100 }))
+            const rebasedBench = filteredBench.map((n: NavPoint) => ({ date: n.date, value: (n.value / benchBase) * 100 }))
+
+            setNav(rebasedFund)
+            setBenchmarkNav(rebasedBench)
+
+            const fundMetrics = computeAllMetrics(rebasedFund)
+            const benchMetrics = computeAllMetrics(rebasedBench)
+
+            setMetrics(fundMetrics)
+            setBenchmarkMetrics(benchMetrics)
+            setDrawdownSeries(computeDrawdownSeries(rebasedFund))
+            setBenchmarkDrawdown(computeDrawdownSeries(rebasedBench))
+            setRollingReturns(computeRolling3YCAGR(rebasedFund))
+            setBenchmarkRolling(computeRolling3YCAGR(rebasedBench))
           }
-        } catch (e: any) {
-          setError(e.message)
-        } finally {
-          setLoading(false)
         }
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
       }
+    }
 
-      fetchData()
-    }, [id])
+    fetchData()
+  }, [id])
 
 
   if (loading) {
@@ -128,7 +134,7 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
           <Link href="/rankings" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4 transition-colors">
             <ArrowLeft className="mr-1 h-4 w-4" /> Back to Rankings
           </Link>
-          
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -142,7 +148,7 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
                 {fund.category} Index Fund • Inception: {fund.inception_date}
               </p>
             </div>
-            
+
             <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 flex items-center gap-4">
                <div className="text-right">
                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Composite Score</div>
@@ -189,30 +195,51 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
               </CardContent>
             </Card>
 
-              {/* Risk Analysis */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="shadow-sm border-border/60">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                      <TrendingDown className="h-4 w-4 text-red-500" /> Drawdown Risk
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DrawdownChart data={drawdownSeries} benchmarkData={benchmarkDrawdown} name={fund.code} />
-                  </CardContent>
-                </Card>
-                <Card className="shadow-sm border-border/60">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-teal-500" /> Rolling 3Y CAGR
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <RollingReturnChart data={rollingReturns} benchmarkData={benchmarkRolling} name={fund.code} />
-                  </CardContent>
-                </Card>
-              </div>
+            {/* Risk Analysis */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="shadow-sm border-border/60">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4 text-red-500" /> Drawdown Risk
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <DrawdownChart data={drawdownSeries} benchmarkData={benchmarkDrawdown} name={fund.code} />
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm border-border/60">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-teal-500" /> Rolling 3Y CAGR
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RollingReturnChart data={rollingReturns} benchmarkData={benchmarkRolling} name={fund.code} />
+                </CardContent>
+              </Card>
+            </div>
 
+            {/* Fiscal Year Returns Chart */}
+            {rawBenchmarkNav.length > 0 && (
+              <Card className="shadow-sm border-border/60">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-indigo-500" /> Fiscal Year Returns vs NIFTY 50
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Annual returns (Apr – Mar) since FY2006. NIFTY 50 shown for all years; {fund.code} from inception.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-2 sm:px-6">
+                  <FiscalYearChart
+                    fundNav={rawFundNav}
+                    benchmarkNav={rawBenchmarkNav}
+                    fundName={fund.code}
+                    benchmarkName="NIFTY 50"
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="space-y-6">
@@ -238,14 +265,14 @@ export default function FundDetailsPage({ params }: { params: Promise<{ id: stri
                   </p>
                 </div>
 
-                  <div className="space-y-2">
-                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Nifty 50 Comparison</p>
-                    <p className="text-sm leading-relaxed font-medium">
-                      Compared to the Nifty 50 benchmark, this fund has delivered an annualized excess return of <strong>{((fund.cagr - (benchmarkMetrics?.cagr || 0)) * 100).toFixed(1)}%</strong>. 
-                      Its volatility is <strong>{fund.volatility > (benchmarkMetrics?.volatility || 0) ? "higher" : "lower"}</strong> than the benchmark, resulting in a Sharpe ratio of <strong>{fund.sharpe_ratio.toFixed(2)}</strong> vs {benchmarkMetrics?.sharpe?.toFixed(2) || "0.00"} for Nifty 50.
-                    </p>
-                  </div>
-                
+                <div className="space-y-2">
+                  <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Nifty 50 Comparison</p>
+                  <p className="text-sm leading-relaxed font-medium">
+                    Compared to the Nifty 50 benchmark, this fund has delivered an annualized excess return of <strong>{((fund.cagr - (benchmarkMetrics?.cagr || 0)) * 100).toFixed(1)}%</strong>.
+                    Its volatility is <strong>{fund.volatility > (benchmarkMetrics?.volatility || 0) ? "higher" : "lower"}</strong> than the benchmark, resulting in a Sharpe ratio of <strong>{fund.sharpe_ratio.toFixed(2)}</strong> vs {benchmarkMetrics?.sharpe?.toFixed(2) || "0.00"} for Nifty 50.
+                  </p>
+                </div>
+
                 <div className="pt-4 border-t border-indigo-100/50 dark:border-indigo-900/50 space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-muted-foreground font-bold">Volatility Profile</span>
